@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sign_language_recognition_app/services/settings_service.dart';
+import 'package:sign_language_recognition_app/shared/widgets/navigation_button.dart';
 import '../shared/widgets/dashboard_block.dart';
 
 class HomePage extends StatefulWidget {
@@ -21,6 +24,9 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             onPressed: () {
+              if (SettingsService.cachedHaptic) {
+                HapticFeedback.selectionClick();
+              }
               context.push("/profile");
             }, 
             icon: const Icon(Icons.account_circle))
@@ -34,6 +40,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 40),
             const WelcomeDialog(username: "Raymond"),
             const SizedBox(height: 40),
+            // TODO: change the value of learning progress to follow sqlite data
             LearningProgressButton(
               lessonsCompleted: 13, 
               quizzesCompleted: 5, 
@@ -192,76 +199,6 @@ class LearningProgressButton extends StatelessWidget {
             ],
           )
         ],
-      ),
-    );
-  }
-}
-
-class NavigationButton extends StatelessWidget {
-  const NavigationButton({
-    super.key,
-    required this.title,
-    required this.icon,
-    this.color = Colors.black,
-    required this.route,
-    required this.description,
-  });
-
-  final String title;
-  final IconData icon;
-  final Color color;
-  final String route;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          context.push(route);
-        },
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            width: double.infinity,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.grey,
-                width: 1,
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 32, color: color),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  description,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color.fromRGBO(0, 0, 0, 0.4),
-                  ),
-                )
-                
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

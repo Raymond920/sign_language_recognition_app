@@ -1,5 +1,9 @@
 import 'package:go_router/go_router.dart';
+import 'package:sign_language_recognition_app/pages/lessons_list_page.dart';
+import 'package:sign_language_recognition_app/pages/practice_sign_page.dart';
+import 'package:sign_language_recognition_app/pages/quizzes_list_page.dart';
 import 'package:sign_language_recognition_app/pages/recognize_signs_page.dart';
+import 'package:sign_language_recognition_app/pages/settings_page.dart';
 
 import '/pages/home_page.dart';
 import '/pages/profile_page.dart';
@@ -36,7 +40,27 @@ class AppRouter {
         path: '/recognize-signs',
         name: '/recognize_signs',
         builder: (context, state) => const RecognizePage(),
-      )
+      ),
+      GoRoute(
+        path: '/practice-signs',
+        name: 'practice_signs',
+        builder: (context, state) => const PracticeSignPage(),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const SettingsPage(),
+      ),
+      GoRoute(
+        path: '/lessons-list',
+        name: 'lessons_list',
+        builder: (context, state) => const LessonsListPage(),
+      ),
+      GoRoute(
+        path: '/quizzes-list',
+        name: 'quizzes_list',
+        builder: (context, state) => const QuizzesListPage(),
+      ),
     ]
   );
 }

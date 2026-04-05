@@ -3,11 +3,15 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter/services.dart';
 import 'package:hand_landmarker/hand_landmarker.dart';
+import 'package:show_fps/show_fps.dart';
 
 import 'package:sign_language_recognition_app/model/model_connection.dart';
 import 'package:sign_language_recognition_app/painter/landmark_painter.dart';
 import 'package:sign_language_recognition_app/services/hand_detection_service.dart';
+import 'package:sign_language_recognition_app/services/settings_service.dart';
+import 'package:sign_language_recognition_app/services/tts_service.dart';
 import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
 
 class RecognizePage extends StatefulWidget {
@@ -34,21 +38,59 @@ class _RecognizePageState extends State<RecognizePage> {
 
   String? _errorMessage;
   Set<int> _selectedMode = {0};
-  bool _enableTextToSpeech = false;
+  bool _enableTextToSpeech = SettingsService.cachedTtsEnabled;
+
+
+  String? _lastRecognizedWord;  // null = no sign being held
+  String? _lastSpokenWord = "";
 
   List<String> prediction = [];
   final List<String> _predictionBuffer = [];
+  final Duration _spellingVoteWindow = const Duration(seconds: 2, milliseconds: 500);
+  DateTime? _spellingWindowStart;
+  final Map<String, int> _spellingVoteCounts = {};
+  String? _lastHoldHintLetter;
+  DateTime? _lastHoldHintAt;
+
+  // Hand landmark line drawing
+  bool _showLandmark = SettingsService.cachedShowLandmarks;
+
+  // Spelling mode controller
+  TextEditingController _spellingController = TextEditingController();
+
+  // FPS tracking
+  int _frameCount = 0;
+  DateTime? _lastFpsTime;
+  double _currentFps = 0.0;
+
+  // Shape stability tracking
+  final List<Float32List> _shapeWindow = [];
+  Float32List? _prevShape;
+  int _stableFrameCount = 0;
+  String? _stabilityStatus = "Initializing...";
+  bool isStable = false;
+
+  // Stability thresholds (tune per device)
+  static const int _shapeWindowSize = 7;
+  static const int _requiredStableFrames = 5;
+  static const double _frameDeltaThreshold = 0.015;  // frame-to-frame change
+  static const double _jitterThreshold = 0.010;       // window variance
 
   @override
   void initState() {
     super.initState();
-    _initialize();
+    // Delay heavy startup work so route transition can finish smoothly first.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _initialize();
+    });
   }
 
   Future<void> _initialize() async {
-    await loadModel();
-    await loadLabels();
-    await _initializeCamera();
+    await Future.wait([
+      initializeModelResources(),
+      _initializeCamera(),
+    ]);
   }
 
   @override
@@ -74,7 +116,7 @@ class _RecognizePageState extends State<RecognizePage> {
       if (cameras.isNotEmpty) {
         cameraController = CameraController(
           frontCamera!, 
-          ResolutionPreset.high,
+          ResolutionPreset.medium,
           enableAudio: false,
         );
 
@@ -111,6 +153,10 @@ class _RecognizePageState extends State<RecognizePage> {
 
   Future<void> _switchCamera() async {
     // Prevent multiple simultaneous switches
+    if (SettingsService.cachedHaptic) {
+      HapticFeedback.selectionClick();
+    }
+
     if (_isSwitchingCamera) return;
     
     print("@DEBUG: Switch camera button onpressed");
@@ -160,10 +206,25 @@ class _RecognizePageState extends State<RecognizePage> {
   }
 
   Future<void> processCameraImage(CameraImage image) async {
-    print("@DEBUG sensorOri=${cameraController!.description.sensorOrientation} lens=${cameraController!.description.lensDirection}");
+    // print("@DEBUG sensorOri=${cameraController!.description.sensorOrientation} lens=${cameraController!.description.lensDirection}");
     if (_isDetecting || !_isCameraInitialized) return;
 
     _isDetecting = true;
+    
+    // FPS calculation
+    _frameCount++;
+    DateTime now = DateTime.now();
+    if (_lastFpsTime != null) {
+      Duration elapsed = now.difference(_lastFpsTime!);
+      if (elapsed.inMilliseconds >= 1000) {
+        _currentFps = (_frameCount / elapsed.inMilliseconds) * 1000;
+        _frameCount = 0;
+        _lastFpsTime = now;
+      }
+    } else {
+      _lastFpsTime = now;
+    }
+    
     try {
       final hands = _handDetectionService.detect(
         image,
@@ -175,12 +236,23 @@ class _RecognizePageState extends State<RecognizePage> {
 
         // Mirror exact webcam test pipeline: wrist subtract only, then StandardScaler
         final landmarks = hand.landmarks;
+        
+        // Debug: Print detected landmarks
+        // print("=== DETECTED LANDMARKS ===");
+        // for (int i = 0; i < landmarks.length; i++) {
+        //   print("Landmark $i: x=${landmarks[i].x.toStringAsFixed(4)}, y=${landmarks[i].y.toStringAsFixed(4)}, z=${landmarks[i].z.toStringAsFixed(4)}");
+        // }
+        // print("========================");
+        
         double wristX = landmarks[0].x;
         double wristY = landmarks[0].y;
         double wristZ = landmarks[0].z;
 
         var inputBuffer = Float32List(63);
         final int sensorOri = cameraController!.description.sensorOrientation;
+
+        // Build raw wrist-relative shape vector for stability check
+        final Float32List shapeVector = Float32List(63);
 
         for (int i = 0; i < 21; i++) {
           double xRel = landmarks[i].x - wristX;
@@ -198,25 +270,108 @@ class _RecognizePageState extends State<RecognizePage> {
             x = -yRel; y = xRel;
           }
 
+          // Store raw wrist-relative for stability check
+          shapeVector[i * 3 + 0] = x;
+          shapeVector[i * 3 + 1] = y;
+          shapeVector[i * 3 + 2] = zRel;
+
+          // Standardize for model input
           inputBuffer[i * 3 + 0] = (x    - mean[i * 3 + 0]) / scale[i * 3 + 0];
           inputBuffer[i * 3 + 1] = (y    - mean[i * 3 + 1]) / scale[i * 3 + 1];
           inputBuffer[i * 3 + 2] = (zRel - mean[i * 3 + 2]) / scale[i * 3 + 2];
         }
 
+        // Check shape stability before running prediction
+        if (!_isShapeStable(shapeVector)) {
+          prediction = [];  // Clear old prediction when unstable
+          if (mounted) setState(() => _landmarks = hands);
+          _isDetecting = false;
+          return;
+        }
+
+        // Debug: Print processed landmarks
+        // print("=== PROCESSED LANDMARKS (Normalized & Standardized) ===");
+        // for (int i = 0; i < 21; i++) {
+        //   print("Landmark $i: x=${inputBuffer[i * 3 + 0].toStringAsFixed(6)}, y=${inputBuffer[i * 3 + 1].toStringAsFixed(6)}, z=${inputBuffer[i * 3 + 2].toStringAsFixed(6)}");
+        // }
+        // print("=======================================================");
+
         final input = inputBuffer.reshape([1, 21, 3, 1]);
         final raw = predict(input);
 
+        // Debug: Print raw model output
+        // print("=== RAW MODEL OUTPUT ===");
+        // print("Predictions: $raw");
+        // print("========================");
+
         // Majority vote over last 7 frames to suppress flickering
-        if (raw.isNotEmpty && raw[0].length == 1) {
-          _predictionBuffer.add(raw[0]);
-          if (_predictionBuffer.length > 7) _predictionBuffer.removeAt(0);
-          final counts = <String, int>{};
-          for (final p in _predictionBuffer) counts[p] = (counts[p] ?? 0) + 1;
-          final stable = counts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+        if (raw.isNotEmpty && raw[0] != "Detecting...") {
+          final stable = raw[0];
+          // TODO: Temporary disable majority vote, to prevent signing '5' but input previous sign issue
+          // _predictionBuffer.add(raw[0]);
+          // if (_predictionBuffer.length > 7) _predictionBuffer.removeAt(0);
+          // final counts = <String, int>{};
+          // for (final p in _predictionBuffer) counts[p] = (counts[p] ?? 0) + 1;
+          // final stable = counts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
           prediction = [stable, if (raw.length > 1) raw[1]];
+
+          if (isStable && _lastSpokenWord != stable){
+            if (_enableTextToSpeech){
+              if (_selectedMode.first != 1){
+                if (SettingsService.cachedHaptic) {
+                  HapticFeedback.mediumImpact();
+                }
+                TtsService.speakText(stable);
+              } else if (_selectedMode.first == 1 && stable.length <= 2) {
+                TtsService.speakText(stable);
+              }
+            }
+            _lastSpokenWord = stable;
+          }
+
+          if (_selectedMode.first == 1) {
+            if (isStable) {
+              // New sign detected
+              if (_lastRecognizedWord != stable) {
+                _lastRecognizedWord = stable;
+                _spellingWindowStart = DateTime.now();
+              }
+              
+              // Check if held long enough
+              if (_spellingWindowStart != null) {
+                final elapsedMs = DateTime.now().difference(_spellingWindowStart!).inMilliseconds;
+                if (elapsedMs >= _spellingVoteWindow.inMilliseconds) {
+                  // Time reached - verify sign hasn't changed before adding
+                  if (_lastRecognizedWord == stable && stable.length <= 2) {
+                    addLetter(stable);
+                    if (SettingsService.cachedHaptic) {
+                      HapticFeedback.vibrate();
+                    }
+                    // to reset the overlay hint, so that user will know the timer reset while trying to input same sign.
+                    isStable = false;
+                    
+                    _lastRecognizedWord = null;
+                    _spellingWindowStart = null;
+                  } else {
+                    // Sign changed during hold - reset without adding
+                    _lastRecognizedWord = null;
+                    _spellingWindowStart = null;
+                  }
+                }
+              }
+            } else {
+              _lastRecognizedWord = null;
+              _spellingWindowStart = null;
+            }
+          } else {
+            _spellingWindowStart = null;
+            _spellingVoteCounts.clear();
+            _lastHoldHintLetter = null;
+          }
         } else {
           _predictionBuffer.clear();
           prediction = raw;
+          _lastHoldHintLetter = null;
         }
       }
 
@@ -228,6 +383,99 @@ class _RecognizePageState extends State<RecognizePage> {
     }
   }
 
+  void addLetter(String letter){
+    _spellingController.text += letter;
+  }
+
+  /// Check if hand shape is stable enough for prediction.
+  /// Returns true if shape variation is below tolerance for enough frames.
+  bool _isShapeStable(Float32List currentShape) {
+    // 1) Compute frame-to-frame delta
+    double frameDelta = 0.0;
+    if (_prevShape != null) {
+      for (int i = 0; i < currentShape.length; i++) {
+        final d = currentShape[i] - _prevShape![i];
+        frameDelta += d * d;
+      }
+      frameDelta = math.sqrt(frameDelta / currentShape.length);
+    }
+
+    _prevShape = currentShape;
+
+    // 2) Add to rolling window
+    _shapeWindow.add(currentShape);
+    if (_shapeWindow.length > _shapeWindowSize) {
+      _shapeWindow.removeAt(0);
+    }
+
+    // Need full window before checking stability
+    if (_shapeWindow.length < _shapeWindowSize) {
+      _stableFrameCount = 0;
+      _stabilityStatus = "Collecting samples... ${_shapeWindow.length}/$_shapeWindowSize";
+      return false;
+    }
+
+    // 3) Compute jitter (per-dimension std dev, then average)
+    double jitterSum = 0.0;
+    for (int dim = 0; dim < currentShape.length; dim++) {
+      // Mean
+      double mean = 0.0;
+      for (final v in _shapeWindow) {
+        mean += v[dim];
+      }
+      mean /= _shapeWindow.length;
+
+      // Std dev
+      double varSum = 0.0;
+      for (final v in _shapeWindow) {
+        final d = v[dim] - mean;
+        varSum += d * d;
+      }
+      final std = math.sqrt(varSum / _shapeWindow.length);
+      jitterSum += std;
+    }
+    final windowJitter = jitterSum / currentShape.length;
+
+    // 4) Check both conditions
+    final frameStable = (frameDelta < _frameDeltaThreshold);
+    final windowStable = (windowJitter < _jitterThreshold);
+
+    if (frameStable && windowStable) {
+      _stableFrameCount++;
+      _stabilityStatus = "Stable: $_stableFrameCount/$_requiredStableFrames";
+    } else {
+      _stableFrameCount = 0;
+      _stabilityStatus = "Moving (Δ=${frameDelta.toStringAsFixed(4)}, J=${windowJitter.toStringAsFixed(4)})";
+    }
+
+    final stability = _stableFrameCount >= _requiredStableFrames;
+    isStable = stability;
+
+    // TODO: Add detecting text
+    return stability;
+  }
+
+  // void _showHoldHint(String letter) {
+  //   final now = DateTime.now();
+  //   final isSameLetter = _lastHoldHintLetter == letter;
+  //   final withinCooldown = _lastHoldHintAt != null &&
+  //       now.difference(_lastHoldHintAt!).inMilliseconds < 1000;
+
+  //   if (isSameLetter && withinCooldown) return;
+
+  //   _lastHoldHintLetter = letter;
+  //   _lastHoldHintAt = now;
+
+  //   if (!mounted) return;
+  //   final messenger = ScaffoldMessenger.of(context);
+  //   messenger.hideCurrentSnackBar();
+  //   messenger.showSnackBar(
+  //     SnackBar(
+  //       content: Text('Detecting: $letter, please hold'),
+  //       duration: Duration(milliseconds: 900),
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -271,7 +519,7 @@ class _RecognizePageState extends State<RecognizePage> {
                           Center(child: CircularProgressIndicator()),
 
                         // Hand landmark overlay
-                        if (_isCameraInitialized && cameraController != null && cameraController!.value.isInitialized)
+                        if (_isCameraInitialized && cameraController != null && cameraController!.value.isInitialized && _showLandmark)
                           Positioned.fill(
                             child: CustomPaint(
                               painter: LandmarkPainter(
@@ -279,6 +527,52 @@ class _RecognizePageState extends State<RecognizePage> {
                                 previewSize: cameraController!.value.previewSize!,
                                 lensDirection: cameraController!.description.lensDirection,
                                 sensorOrientation: cameraController!.description.sensorOrientation,
+                              ),
+                            ),
+                          ),
+
+                        // FPS Counter
+                        Positioned(
+                          top: 10,
+                          right: 10,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Color.fromRGBO(0, 0, 0, 0.6),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'FPS: ${_currentFps.toStringAsFixed(1)}',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        if (prediction.isNotEmpty && !(prediction[0].length > 2) && _selectedMode.first == 1 && isStable)
+                          // Hint overlay
+                          Positioned(
+                            top: 50,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Color.fromRGBO(0, 0, 0, 0.4),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Detecting: ${prediction[0]}, Keep holding',
+                                // 'Detecting: ${_currentFps.toStringAsFixed(1)}',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -296,6 +590,44 @@ class _RecognizePageState extends State<RecognizePage> {
                               onPressed: _switchCamera,
                               icon: Icon(
                                 Icons.flip_camera_ios, 
+                              color: Color.fromRGBO(255,255,255,0.7),
+                                size: 32,
+                              )
+                            ),
+                          ),
+                        ),
+
+                        // Landmark drawing toggle button
+                        Positioned(
+                          bottom: 20,
+                          right: 20,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Color.fromRGBO(0,0,0,0.2),
+                              shape: BoxShape.circle
+                            ),
+                            child: IconButton(
+                              onPressed: () {
+                                if (SettingsService.cachedHaptic) {
+                                  HapticFeedback.selectionClick();
+                                }
+                                _showLandmark = !_showLandmark;
+                                var snackBar = SnackBar(
+                                  content: Text("Landmark Drawing Disabled."),
+                                  duration: Duration(seconds: 1),
+                                );
+
+                                if(_showLandmark){
+                                  snackBar = SnackBar(
+                                    content: Text("Landmark Drawing Enabled."),
+                                    duration: Duration(seconds: 1),
+                                  );
+                                }
+                                
+                                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                              },
+                              icon: Icon(
+                                Icons.timeline, 
                               color: Color.fromRGBO(255,255,255,0.7),
                                 size: 32,
                               )
@@ -326,12 +658,12 @@ class _RecognizePageState extends State<RecognizePage> {
                     child: Column(
                       children: [
                         if (prediction.isNotEmpty)
-                          if (prediction[0].length == 1)
+                          if (prediction[0].length <= 7)
                             Text(prediction[0], style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold))
-                          else 
+                          else
                             Text(prediction[0], style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))
                         else
-                          Text("Start Sign", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                          Text("Detecting...", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                         Spacer(),
                         
                         if (prediction.length > 1)
@@ -344,7 +676,6 @@ class _RecognizePageState extends State<RecognizePage> {
                                 child: Text("Correct", style: TextStyle(color: Colors.green)),
                               ),
                               SizedBox(width: 10),
-                              // TODO: add state managemnt for accuracy getting from model
                               Text("${prediction[1]}% Accurate", style: TextStyle(color: Colors.grey))
                             ],
                           )
@@ -369,26 +700,48 @@ class _RecognizePageState extends State<RecognizePage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        TextField(
-                          readOnly: true,
-                          showCursor: true,
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            hintText: 'Spelling: HELLO',
-                            hintStyle: TextStyle(
-                              color: Color.fromRGBO(0, 0, 0, 0.4)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _spellingController,
+                                readOnly: true,
+                                showCursor: true,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: 'Spell something...',
+                                  hintStyle: TextStyle(
+                                    color: Color.fromRGBO(0, 0, 0, 0.4)
+                                  )
+                                ),
+                                style: TextStyle(
+                                  fontSize: 14
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                if (SettingsService.cachedHaptic) {
+                                  HapticFeedback.selectionClick();
+                                }
+                                TtsService.speakText(_spellingController.text);
+                              },
+                              icon: Icon(
+                                Icons.volume_up,
+                                size: 20,
+                              ),
                             )
-                          ),
-                          style: TextStyle(
-                            fontSize: 14
-                          ),
+                          ],
                         ),
                         Row(
                           children: [
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  print("@DEBUG: Space button onPressed.");
+                                  if (SettingsService.cachedHaptic) {
+                                    HapticFeedback.selectionClick();
+                                  }
+                                  _spellingController.text += " ";
                                 }, 
                                 style: OutlinedButton.styleFrom(
                                   shape: RoundedRectangleBorder(
@@ -419,7 +772,23 @@ class _RecognizePageState extends State<RecognizePage> {
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  print("@DEBUG: Delete button onPressed.");
+                                  if (SettingsService.cachedHaptic) {
+                                    HapticFeedback.selectionClick();
+                                  }
+                                  final text = _spellingController.text;
+                                  final cursorPos = _spellingController.selection.baseOffset;
+
+                                  if (cursorPos > 0) {
+                                    final newText =
+                                        text.substring(0, cursorPos - 1) + text.substring(cursorPos);
+
+                                    _spellingController.text = newText;
+
+                                    // Move cursor back correctly
+                                    _spellingController.selection = TextSelection.fromPosition(
+                                      TextPosition(offset: cursorPos - 1),
+                                    );
+                                  }
                                 }, 
                                 style: OutlinedButton.styleFrom(
                                   shape: RoundedRectangleBorder(
@@ -450,7 +819,10 @@ class _RecognizePageState extends State<RecognizePage> {
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  print("@DEBUG: Clear button onPressed.");
+                                  if (SettingsService.cachedHaptic) {
+                                    HapticFeedback.selectionClick();
+                                  }
+                                  _spellingController.clear();
                                 }, 
                                 style: OutlinedButton.styleFrom(
                                   shape: RoundedRectangleBorder(
@@ -504,6 +876,10 @@ class _RecognizePageState extends State<RecognizePage> {
                   ],
                   selected: _selectedMode,
                   onSelectionChanged: (Set<int> newSelection) {
+                    if (SettingsService.cachedHaptic) {
+                      HapticFeedback.selectionClick();
+                    }
+
                     setState(() {
                       _selectedMode = newSelection;
                     });
@@ -559,10 +935,14 @@ class _RecognizePageState extends State<RecognizePage> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(8), 
                         onTap: () {
+                          if (SettingsService.cachedHaptic) {
+                            HapticFeedback.selectionClick();
+                          }
                           setState(() {
                             _enableTextToSpeech = !_enableTextToSpeech;
                             print(_enableTextToSpeech ? "TTS enabled" : "TTS disabled");
                           });
+                          SettingsService.setTts(_enableTextToSpeech);
                         },
                         child: Icon(
                           _enableTextToSpeech ? Icons.volume_up_outlined : Icons.volume_off_outlined,
