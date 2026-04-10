@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:hand_landmarker/hand_landmarker.dart';
 import 'package:show_fps/show_fps.dart';
 
-import 'package:sign_language_recognition_app/model/model_connection.dart';
+import 'package:sign_language_recognition_app/tflite_model/model_connection.dart';
 import 'package:sign_language_recognition_app/painter/landmark_painter.dart';
 import 'package:sign_language_recognition_app/services/hand_detection_service.dart';
 import 'package:sign_language_recognition_app/services/settings_service.dart';

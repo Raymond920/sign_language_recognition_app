@@ -1,4 +1,6 @@
 import 'package:go_router/go_router.dart';
+import 'package:sign_language_recognition_app/models/lesson_model.dart';
+import 'package:sign_language_recognition_app/pages/lesson_content_page.dart';
 import 'package:sign_language_recognition_app/pages/lessons_list_page.dart';
 import 'package:sign_language_recognition_app/pages/practice_sign_page.dart';
 import 'package:sign_language_recognition_app/pages/quizzes_list_page.dart';
@@ -52,9 +54,17 @@ class AppRouter {
         builder: (context, state) => const SettingsPage(),
       ),
       GoRoute(
-        path: '/lessons-list',
-        name: 'lessons_list',
+        path: '/lessons',
+        name: 'lessons',
         builder: (context, state) => const LessonsListPage(),
+      ),
+      GoRoute(
+        path: '/lesson-content',
+        name: 'lesson_content',
+        builder: (context, state) {
+          final lesson = state.extra as LessonMock;
+          return LessonContentPage(lesson: lesson);
+        }
       ),
       GoRoute(
         path: '/quizzes-list',

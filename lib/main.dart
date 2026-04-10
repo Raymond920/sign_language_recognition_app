@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'router/app_router.dart';
-import 'model/model_connection.dart';
+import 'tflite_model/model_connection.dart';
 
 import 'services/settings_service.dart';
 import 'services/tts_service.dart';

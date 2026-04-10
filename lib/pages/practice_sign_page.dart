@@ -77,7 +77,7 @@ class _PracticeSignPageState extends State<PracticeSignPage> {
                     ),
                   ], 
                   onTap: () => {
-                    context.push('/lessons-list')
+                    context.push('/lessons')
                   }
                 ),
                 LearningModuleCard(
