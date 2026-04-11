@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sign_language_recognition_app/models/lesson_model.dart';
+import 'package:sign_language_recognition_app/services/db_helper.dart';
 import 'package:sign_language_recognition_app/shared/widgets/lesson_card.dart';
 
 class LessonsListPage extends StatefulWidget {
@@ -10,68 +11,132 @@ class LessonsListPage extends StatefulWidget {
 }
 
 class _LessonsListPageState extends State<LessonsListPage> {
-  List<LessonMock> dummyLessons = [
-    LessonMock(
-      title: "Alphabet Group 1: A, B, C",
-      description: "Learn the first 3 letters of MSL alphabet",
-      signCount: 3,
-      progress: 1.0,
-    ),
-    LessonMock(
-      title: "Alphabet Group 2: D, E, F",
-      description: "Continue with letters D through F",
-      signCount: 3,
-      progress: 1.0,
-    ),
-    LessonMock(
-      title: "Numbers 0-5",
-      description: "Basic number signs from 0 to 5",
-      signCount: 6,
-      progress: 0.6,
-    ),
-    LessonMock(
-      title: "Numbers 6-10",
-      description: "Basic number signs from 1 to 5",
-      signCount: 5,
-      progress: 0.0,
-    ),
-  ];
+  late Future<List<Lesson>> _lessonsFuture;
+  final DBHelper dbHelper = DBHelper();
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch lessons from database
+    _refreshLessons();
+  }
+
+  void _refreshLessons() {
+    print('\n' + '='*70);
+    print('📚 LESSONS LIST PAGE: Fetching lessons from database...');
+    print('='*70);
+    setState(() {
+      _lessonsFuture = dbHelper.getAllLessons().then((lessons) {
+        print('\n✅ Database Query Complete:');
+        print('   Total lessons found: ${lessons.length}');
+        if (lessons.isNotEmpty) {
+          print('\n📋 Lesson Details:');
+          for (int i = 0; i < lessons.length; i++) {
+            final lesson = lessons[i];
+            print('   [$i+1] ID: ${lesson.id}');
+            print('       Title: ${lesson.title}');
+            print('       Description: ${lesson.description}');
+            print('       Signs Count: ${lesson.signCount}');
+            print('       Progress: ${(lesson.progress * 100).toStringAsFixed(1)}%');
+            print('       Status: ${lesson.status}');
+            print('');
+          }
+        }
+        print('='*70 + '\n');
+        return lessons;
+      }).catchError((error) {
+        print('\n❌ Error fetching lessons: $error');
+        print('='*70 + '\n');
+        throw error;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text("Lessons"),
+        title: const Text("Lessons"),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        child: Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            itemCount: dummyLessons.length + 1,
-            separatorBuilder: (context, index) {
-              if (index == dummyLessons.length - 1) return const SizedBox(height: 0);
-              return const SizedBox(height: 15);
-            },
-            itemBuilder: (context, index) {
-              if (index == dummyLessons.length) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Text(
-                    "Showing ${dummyLessons.length} lessons",
-                    style: const TextStyle(
-                      color: Colors.blueGrey,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                );
-              }
+      body: FutureBuilder<List<Lesson>>(
+        future: _lessonsFuture,
+        builder: (context, snapshot) {
+          // Loading state
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            print('⏳ Loading state: Waiting for database query...');
+            return const Center(child: CircularProgressIndicator());
+          }
 
-              return LessonCard(lesson: dummyLessons[index]);
-            },
-          ),
-        ),
+          // Error state
+          if (snapshot.hasError) {
+            print('❌ Error state: ${snapshot.error}');
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  Text('Error loading lessons: ${snapshot.error}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      print('🔄 Retrying database query...');
+                      setState(() {
+                        _lessonsFuture = dbHelper.getAllLessons();
+                      });
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // No data state
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            print('⚠️  No data state: No lessons found in database');
+            return const Center(
+              child: Text('No lessons available'),
+            );
+          }
+
+          final lessons = snapshot.data!;
+          print('✅ Success state: Rendering ${lessons.length} lessons');
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              itemCount: lessons.length + 1,
+              separatorBuilder: (context, index) {
+                if (index == lessons.length - 1) return const SizedBox(height: 0);
+                return const SizedBox(height: 15);
+              },
+              itemBuilder: (context, index) {
+                if (index == lessons.length) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'Showing ${lessons.length} lessons',
+                      style: const TextStyle(
+                        color: Colors.blueGrey,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  );
+                }
+
+                final lesson = lessons[index];
+
+                return LessonCard(
+                  lesson: lesson,
+                  onNavigateBack: _refreshLessons,
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }

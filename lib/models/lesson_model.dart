@@ -1,29 +1,31 @@
 import 'package:flutter/material.dart';
 
-class LessonMock {
-  final String title;
-  final String description;
-  final int signCount;
-  final double progress; // 0.0 to 1.0
+// class LessonMock {
+//   final int id;  // Add lesson ID for navigation
+//   final String title;
+//   final String description;
+//   final int signCount;
+//   final double progress; // 0.0 to 1.0
 
-  LessonMock({
-    required this.title, 
-    required this.description, 
-    required this.signCount, 
-    required this.progress, 
-  });
-}
+//   LessonMock({
+//     required this.id,
+//     required this.title, 
+//     required this.description, 
+//     required this.signCount, 
+//     required this.progress, 
+//   });
+// }
 
 class Lesson {
   final int id;
-  final String name;
+  final String title;
   final String description;
   final int signCount;    // Total signs in this lesson
   final double progress;   // 0.0 to 1.0 (Calculated via SQL)
 
   Lesson({
     required this.id,
-    required this.name,
+    required this.title,
     required this.description,
     required this.signCount,
     required this.progress,
@@ -46,7 +48,7 @@ class Lesson {
   // Updated factory to handle the calculated fields from your SQL Query
   factory Lesson.fromMap(Map<String, dynamic> json) => Lesson(
     id: json['lesson_id'],
-    name: json['lesson_name'],
+    title: json['title'],  // Fixed: DB column is 'title', not 'lesson_name'
     description: json['description'],
     // These two are returned by the subqueries in your SQL
     signCount: json['sign_count'] ?? 0, 

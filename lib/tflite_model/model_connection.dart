@@ -4,6 +4,41 @@ import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:hand_landmarker/hand_landmarker.dart';
 
+/// Extension to reshape Float32List into nested list structure for TFLite input
+extension Float32ListReshape on Float32List {
+  List<dynamic> reshape(List<int> shape) {
+    if (shape.length == 4 && shape[0] == 1 && shape[1] == 21 && shape[2] == 3 && shape[3] == 1) {
+      // Reshape [63] to [1, 21, 3, 1]
+      List<dynamic> result = [];
+      List<dynamic> batch = [];
+      for (int i = 0; i < 21; i++) {
+        List<dynamic> point = [];
+        for (int j = 0; j < 3; j++) {
+          List<double> coord = [this[i * 3 + j]];
+          point.add(coord);
+        }
+        batch.add(point);
+      }
+      result.add(batch);
+      return result;
+    }
+    // Fallback: return as-is
+    return toList();
+  }
+}
+
+/// Extension to reshape List into nested list structure for TFLite output
+extension ListReshape on List<double> {
+  List<dynamic> reshape(List<int> shape) {
+    if (shape.length == 2 && shape[0] == 1 && shape[1] == 44) {
+      // Reshape [44] to [1, 44]
+      return [this];
+    }
+    // Fallback: return as-is
+    return [this];
+  }
+}
+
 // tflite model
 late tfl.Interpreter _interpreter;
 List<String> _labels = [];

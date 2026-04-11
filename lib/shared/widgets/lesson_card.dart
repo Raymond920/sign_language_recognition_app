@@ -6,9 +6,14 @@ import 'package:sign_language_recognition_app/shared/widgets/status_badge.dart';
 
 
 class LessonCard extends StatelessWidget {
-  const LessonCard({super.key, required this.lesson});
+  const LessonCard({
+    super.key, 
+    required this.lesson,
+    this.onNavigateBack,
+  });
 
-  final LessonMock lesson;
+  final Lesson lesson;
+  final VoidCallback? onNavigateBack;
 
   @override
   Widget build(BuildContext context) {
@@ -46,12 +51,26 @@ class LessonCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () {
+          onTap: () async {
             // Assuming route defined as /lessons/:id
-            context.pushNamed(
+            print('\n🎓 LESSON CARD TAPPED:');
+            print('   Lesson ID: ${lesson.id}');
+            print('   Title: ${lesson.title}');
+            print('   Signs Count: ${lesson.signCount}');
+            print('   Current Progress: ${(lesson.progress * 100).toStringAsFixed(1)}%');
+            print('   Navigation: lesson_content route...\n');
+            
+            // Navigate to lesson content page
+            await context.pushNamed(
               'lesson_content', 
-              extra: lesson
+              extra: lesson,
             );
+            
+            // After returning, refresh the lessons list
+            if (onNavigateBack != null) {
+              print('\n🔄 Returning from lesson - Refreshing lessons list...\n');
+              onNavigateBack!();
+            }
           },
           child: Container(
             width: double.infinity,
