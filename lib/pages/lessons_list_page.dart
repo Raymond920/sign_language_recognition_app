@@ -22,31 +22,31 @@ class _LessonsListPageState extends State<LessonsListPage> {
   }
 
   void _refreshLessons() {
-    print('\n' + '='*70);
-    print('📚 LESSONS LIST PAGE: Fetching lessons from database...');
-    print('='*70);
+    // print('\n' + '='*70);
+    // print('📚 LESSONS LIST PAGE: Fetching lessons from database...');
+    // print('='*70);
     setState(() {
       _lessonsFuture = dbHelper.getAllLessons().then((lessons) {
-        print('\n✅ Database Query Complete:');
-        print('   Total lessons found: ${lessons.length}');
-        if (lessons.isNotEmpty) {
-          print('\n📋 Lesson Details:');
-          for (int i = 0; i < lessons.length; i++) {
-            final lesson = lessons[i];
-            print('   [$i+1] ID: ${lesson.id}');
-            print('       Title: ${lesson.title}');
-            print('       Description: ${lesson.description}');
-            print('       Signs Count: ${lesson.signCount}');
-            print('       Progress: ${(lesson.progress * 100).toStringAsFixed(1)}%');
-            print('       Status: ${lesson.status}');
-            print('');
-          }
-        }
-        print('='*70 + '\n');
+        // print('\n✅ Database Query Complete:');
+        // print('   Total lessons found: ${lessons.length}');
+        // if (lessons.isNotEmpty) {
+        //   print('\n📋 Lesson Details:');
+        //   for (int i = 0; i < lessons.length; i++) {
+        //     final lesson = lessons[i];
+        //     print('   [$i+1] ID: ${lesson.id}');
+        //     print('       Title: ${lesson.title}');
+        //     print('       Description: ${lesson.description}');
+        //     print('       Signs Count: ${lesson.signCount}');
+        //     print('       Progress: ${(lesson.progress * 100).toStringAsFixed(1)}%');
+        //     print('       Status: ${lesson.status}');
+        //     print('');
+        //   }
+        // }
+        // print('='*70 + '\n');
         return lessons;
       }).catchError((error) {
-        print('\n❌ Error fetching lessons: $error');
-        print('='*70 + '\n');
+        // print('\n❌ Error fetching lessons: $error');
+        // print('='*70 + '\n');
         throw error;
       });
     });
@@ -70,7 +70,7 @@ class _LessonsListPageState extends State<LessonsListPage> {
 
           // Error state
           if (snapshot.hasError) {
-            print('❌ Error state: ${snapshot.error}');
+            // print('❌ Error state: ${snapshot.error}');
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -81,7 +81,7 @@ class _LessonsListPageState extends State<LessonsListPage> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      print('🔄 Retrying database query...');
+                      // print('🔄 Retrying database query...');
                       setState(() {
                         _lessonsFuture = dbHelper.getAllLessons();
                       });
@@ -95,14 +95,14 @@ class _LessonsListPageState extends State<LessonsListPage> {
 
           // No data state
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            print('⚠️  No data state: No lessons found in database');
+            // print('⚠️  No data state: No lessons found in database');
             return const Center(
               child: Text('No lessons available'),
             );
           }
 
           final lessons = snapshot.data!;
-          print('✅ Success state: Rendering ${lessons.length} lessons');
+          // print('✅ Success state: Rendering ${lessons.length} lessons');
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),

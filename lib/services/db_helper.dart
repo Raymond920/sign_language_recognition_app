@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
+import 'package:sign_language_recognition_app/models/question_model.dart';
+import 'package:sign_language_recognition_app/models/quiz_model.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/lesson_model.dart';
 import '../models/sign_model.dart';
@@ -104,5 +106,40 @@ class DBHelper {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  // Get list of quizzes
+  Future<List<Quiz>> getAllQuizzes() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT q.*, 
+        (SELECT COUNT(*) FROM QUESTION WHERE quiz_id = q.quiz_id) as q_count,
+        (SELECT best_score FROM QUIZ_RESULT WHERE quiz_id = q.quiz_id AND user_id = 1) as best_score
+      FROM QUIZ q
+    ''');
+    return maps.map((m) => Quiz.fromMap(m)).toList();
+  }
+
+  // Get questions for a specific quiz
+  Future<List<QuizQuestion>> getQuestionsForQuiz(int quizId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT qu.*, s.image_path 
+      FROM QUESTION qu
+      JOIN SIGN s ON qu.sign_id = s.sign_id
+      WHERE qu.quiz_id = ?
+    ''', [quizId]);
+    return maps.map((m) => QuizQuestion.fromMap(m)).toList();
+  }
+
+  // Save Score
+  Future<void> updateQuizScore(int quizId, int newScore) async {
+    final db = await database;
+    await db.execute('''
+      INSERT INTO QUIZ_RESULT (user_id, quiz_id, best_score) 
+      VALUES (1, ?, ?)
+      ON CONFLICT(user_id, quiz_id) DO UPDATE SET
+      best_score = MAX(best_score, excluded.best_score)
+    ''', [quizId, newScore]);
   }
 }

@@ -1,21 +1,5 @@
 import 'package:flutter/material.dart';
 
-// class LessonMock {
-//   final int id;  // Add lesson ID for navigation
-//   final String title;
-//   final String description;
-//   final int signCount;
-//   final double progress; // 0.0 to 1.0
-
-//   LessonMock({
-//     required this.id,
-//     required this.title, 
-//     required this.description, 
-//     required this.signCount, 
-//     required this.progress, 
-//   });
-// }
-
 class Lesson {
   final int id;
   final String title;
