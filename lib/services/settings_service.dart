@@ -13,7 +13,7 @@ class SettingsService {
   // In-memory cache for instant reads in UI.
   static bool _cachedTtsEnabled = false;
   static String _cachedVoice = "Female Voice";
-  static double _cachedSpeed = 0.5;
+  static double _cachedSpeed = 0.4;
   static bool _cachedDarkMode = false;
   static bool _cachedShowLandmarks = true;
   static bool _cachedHaptic = true;
@@ -76,7 +76,7 @@ class SettingsService {
 
     _cachedTtsEnabled = prefs.getBool(_keyTts) ?? false;
     _cachedVoice = prefs.getString(_keyVoice) ?? "Female Voice";
-    _cachedSpeed = prefs.getDouble(_keySpeed) ?? 1.0;
+    _cachedSpeed = prefs.getDouble(_keySpeed) ?? 0.4;
     _cachedDarkMode = prefs.getBool(_keydarkMode) ?? false;
     _cachedShowLandmarks = prefs.getBool(_keyShowLandmarks) ?? true;
     _cachedHaptic = prefs.getBool(_keyHaptic) ?? true;

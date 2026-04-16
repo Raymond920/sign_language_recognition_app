@@ -3,6 +3,7 @@ import 'router/app_router.dart';
 import 'tflite_model/model_connection.dart';
 
 import 'services/settings_service.dart';
+import 'services/profile_service.dart';
 import 'services/tts_service.dart';
 
 void main() async{
@@ -12,6 +13,7 @@ void main() async{
   initializeModelResources();
 
   final savedSettings = await SettingsService.getAllSettings();
+  await ProfileService.initialize();
 
   await TtsService.initTts(
     speed: savedSettings['speechSpeed'],

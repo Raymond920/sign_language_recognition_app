@@ -1,12 +1,12 @@
 class Sign {
   final int id;
   final String name;
-  final String targetLabel; // For the TFLite model
+  final String targetLabel;        // For the TFLite model
   final String imagePath;
-  final String tutorialText; // The raw string from DB: "Step 1|Step 2"
+  final String tutorialText;       // The raw string from DB: "Step 1|Step 2"
   final String category;
   final String videoId;
-  bool isCompleted;
+  bool isCompleted;                 // From SIGN_PROGRESS.is_completed
 
   Sign({
     required this.id,
@@ -31,7 +31,23 @@ class Sign {
       tutorialText: map['tutorial_text'],
       category: map['category'],
       videoId: map['video_id'],
-      isCompleted: progressStatus,  // Pass the status from the progress table
+      isCompleted: progressStatus,  // Maps to SIGN_PROGRESS.is_completed
+    );
+  }
+
+  /// Create a copy with modifications
+  Sign copyWith({
+    bool? isCompleted,
+  }) {
+    return Sign(
+      id: id,
+      name: name,
+      targetLabel: targetLabel,
+      imagePath: imagePath,
+      tutorialText: tutorialText,
+      category: category,
+      videoId: videoId,
+      isCompleted: isCompleted ?? this.isCompleted,
     );
   }
 }

@@ -37,27 +37,98 @@ class UserStatsCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              header,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 3,
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              crossAxisSpacing: 20,
-              mainAxisSpacing: 20,
-              children: stats
-                  .map((stat) => StatItem(
-                    stat.title,
-                    stat.value,
-                    stat.valueColor,
-                    stat.titleColor,
-                  ))
-                  .toList(),
+            Column(
+              children: [
+                Text(
+                  header,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            stats[0].value,
+                            style: TextStyle(
+                              color: stats[0].valueColor,
+                              fontSize: 24
+                            ),
+                          ),
+                          Text(
+                            stats[0].title,
+                            style: TextStyle(
+                              color: stats[0].titleColor
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            stats[1].value,
+                            style: TextStyle(
+                              color: stats[1].valueColor,
+                              fontSize: 24
+                            ),
+                          ),
+                          Text(
+                            stats[1].title,
+                            style: TextStyle(
+                              color: stats[1].titleColor
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            stats[2].value,
+                            style: TextStyle(
+                              color: stats[2].valueColor,
+                              fontSize: 24
+                            ),
+                          ),
+                          Text(
+                            stats[2].title,
+                            style: TextStyle(
+                              color: stats[2].titleColor
+                            ),
+                          )
+                        ],
+                      ),
+                    )
+                  ],
+                )
+              ],
             )
+            // Text(
+            //   header,
+            //   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            // ),
+            // const SizedBox(height: 16),
+            // GridView.count(
+            //   crossAxisCount: 3,
+            //   shrinkWrap: true,
+            //   physics: NeverScrollableScrollPhysics(),
+            //   padding: const EdgeInsets.symmetric(horizontal: 20),
+            //   crossAxisSpacing: 20,
+            //   mainAxisSpacing: 20,
+            //   children: stats
+            //       .map((stat) => StatItem(
+            //         stat.title,
+            //         stat.value,
+            //         stat.valueColor,
+            //         stat.titleColor,
+            //       ))
+            //       .toList(),
+            // )
           ],
         ),
     );

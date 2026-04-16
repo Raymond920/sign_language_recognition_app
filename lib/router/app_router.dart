@@ -1,9 +1,11 @@
 import 'package:go_router/go_router.dart';
 import 'package:sign_language_recognition_app/models/lesson_model.dart';
+import 'package:sign_language_recognition_app/models/quiz_model.dart';
 import 'package:sign_language_recognition_app/models/sign_model.dart';
 import 'package:sign_language_recognition_app/pages/lesson_content_page.dart';
 import 'package:sign_language_recognition_app/pages/lessons_list_page.dart';
 import 'package:sign_language_recognition_app/pages/practice_sign_page.dart';
+import 'package:sign_language_recognition_app/pages/quiz_content_page.dart';
 import 'package:sign_language_recognition_app/pages/quizzes_list_page.dart';
 import 'package:sign_language_recognition_app/pages/recognize_signs_page.dart';
 import 'package:sign_language_recognition_app/pages/settings_page.dart';
@@ -86,6 +88,14 @@ class AppRouter {
         path: '/quizzes-list',
         name: 'quizzes_list',
         builder: (context, state) => const QuizzesListPage(),
+      ),
+      GoRoute(
+        path: '/quiz-content',
+        name: 'quiz_content',
+        builder: (context, state) {
+          final quiz = state.extra as Quiz;
+          return QuizContentPage(quizId: quiz.id);
+        }
       ),
     ]
   );

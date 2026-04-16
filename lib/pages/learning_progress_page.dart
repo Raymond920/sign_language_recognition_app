@@ -1,22 +1,109 @@
 import 'package:flutter/material.dart';
+import 'package:sign_language_recognition_app/services/profile_service.dart';
+import 'package:sign_language_recognition_app/services/db_helper.dart';
 import 'package:sign_language_recognition_app/shared/widgets/achievement_card.dart';
-import 'package:sign_language_recognition_app/shared/widgets/activity_item.dart';
 import 'package:sign_language_recognition_app/shared/widgets/stat_detail_card.dart';
 import '../shared/widgets/dashboard_block.dart';
 
-class LearningProgressPage extends StatelessWidget {
+class LearningProgressPage extends StatefulWidget {
   const LearningProgressPage({
     super.key,
-    required this.lessonsCompleted,
-    required this.quizzesCompleted,
-    required this.totalLessons,
-    required this.totalQuizzes,
+    this.lessonsCompleted = 0,
+    this.quizzesCompleted = 0,
+    this.totalLessons = 0,
+    this.totalQuizzes = 0,
   });
 
   final int lessonsCompleted;
   final int quizzesCompleted;
   final int totalLessons;
   final int totalQuizzes;
+
+  @override
+  State<LearningProgressPage> createState() => _LearningProgressPageState();
+}
+
+class _LearningProgressPageState extends State<LearningProgressPage> with WidgetsBindingObserver {
+  late AppLifecycleListener _lifecycleListener;
+  int _totalPoints = 0;
+  int _lessonsCompleted = 0;
+  int _quizzesCompleted = 0;
+  int _totalLessons = 0;
+  int _totalQuizzes = 0;
+  double _avgQuizScore = 0;
+  int _signsLearned = 0;
+  final DBHelper _dbHelper = DBHelper();
+
+  @override
+  void initState() {
+    super.initState();
+    // Load initial points value
+    _totalPoints = ProfileService.cachedTotalPoints;
+    
+    // Listen for points changes
+    ProfileService.totalPointsNotifier.addListener(_onPointsChanged);
+    
+    // Load real values from database
+    _loadProgressData();
+    
+    // Add lifecycle listener to refresh when page resumes
+    _lifecycleListener = AppLifecycleListener(
+      onResume: _onPageResume,
+    );
+  }
+
+  Future<void> _loadProgressData() async {
+    try {
+      final allLessons = await _dbHelper.getAllLessons();
+      final lessonsCompleted = allLessons.where((l) => l.isCompleted).length;
+      
+      final allQuizzes = await _dbHelper.getAllQuizzes();
+      // Only count quizzes with score >= 60 as completed
+      final quizzesCompleted = allQuizzes.where((q) => q.bestScore >= 60).length;
+      
+      final double avgQuizScore = quizzesCompleted == 0
+      ? 0
+      : allQuizzes
+          .where((q) => q.bestScore >= 60)
+          .map((q) => q.bestScore)
+          .reduce((a, b) => a + b) / quizzesCompleted;
+      
+      final allSigns = await _dbHelper.getAllSigns();
+      final signsLearned = allSigns.where((s) => s.isCompleted).length;
+
+      setState(() {
+        _totalLessons = allLessons.length;
+        _lessonsCompleted = lessonsCompleted;
+        _totalQuizzes = allQuizzes.length;
+        _quizzesCompleted = quizzesCompleted;
+        _avgQuizScore = avgQuizScore;
+        _signsLearned = signsLearned;
+      });
+    } catch (e) {
+      print('❌ Error loading progress data: $e');
+    }
+  }
+
+  void _onPointsChanged() {
+    setState(() {
+      _totalPoints = ProfileService.cachedTotalPoints;
+    });
+  }
+
+  Future<void> _onPageResume() async {
+    setState(() {
+      _totalPoints = ProfileService.cachedTotalPoints;
+    });
+    // Refresh progress data on page resume
+    await _loadProgressData();
+  }
+
+  @override
+  void dispose() {
+    ProfileService.totalPointsNotifier.removeListener(_onPointsChanged);
+    _lifecycleListener.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +135,7 @@ class LearningProgressPage extends StatelessWidget {
                         ),
                         const Spacer(),
                         Text(
-                          "${((lessonsCompleted + quizzesCompleted) / (totalLessons + totalQuizzes) * 100).toStringAsFixed(2)}%",
+                          "${(_totalLessons + _totalQuizzes > 0 ? ((_lessonsCompleted + _quizzesCompleted) / (_totalLessons + _totalQuizzes) * 100) : 0).toStringAsFixed(2)}%",
                           style: TextStyle(
                             fontSize: 16,
                           ),
@@ -59,7 +146,7 @@ class LearningProgressPage extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
-                        value: (lessonsCompleted + quizzesCompleted) / (totalLessons + totalQuizzes),
+                        value: _totalLessons + _totalQuizzes > 0 ? (_lessonsCompleted + _quizzesCompleted) / (_totalLessons + _totalQuizzes) : 0,
                         minHeight: 14.0,
                         backgroundColor: Color.fromRGBO(99, 102, 241, 0.2),
                         color: Color.fromRGBO(99, 102, 241, 1.0),
@@ -83,7 +170,7 @@ class LearningProgressPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                lessonsCompleted.toString(),
+                                _lessonsCompleted.toString(),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Color.fromRGBO(99, 102, 241, 1.0),
@@ -110,7 +197,7 @@ class LearningProgressPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                quizzesCompleted.toString(),
+                                _quizzesCompleted.toString(),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Color.fromRGBO(99, 102, 241, 1.0),
@@ -136,11 +223,8 @@ class LearningProgressPage extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              /// TODO: Remember to change the point earned 
-                              /// after created point calculation method for 
-                              /// total quizzes
                               Text(
-                                '450',
+                                _totalPoints.toString(),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Color.fromRGBO(6, 182, 212, 1.0),
@@ -243,18 +327,18 @@ class LearningProgressPage extends StatelessWidget {
                       mainAxisSpacing: 10,     // Space between rows
                       childAspectRatio: 1,   // Makes the cards slightly wider/squarer
 
-                      // TODO: Change the value to follow sqlite
+                      // TODO: Change to real value
                       children: [
-                        const StatDetailCard(
+                        StatDetailCard(
                           icon: Icons.track_changes_rounded,
                           iconColor: Colors.indigoAccent,
-                          value: "42",
+                          value: _signsLearned.toString(),
                           label: "Signs Learned",
                         ),
-                        const StatDetailCard(
+                        StatDetailCard(
                           icon: Icons.star_outline_rounded,
                           iconColor: Colors.cyan,
-                          value: "88%",
+                          value: "${_avgQuizScore.toStringAsFixed(1)}%",
                           label: "Avg Quiz Score",
                         ),
                         const StatDetailCard(
@@ -276,25 +360,24 @@ class LearningProgressPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               // Recent Activities block
-              DashboardBlock(
-                title: "Recent Activities",
-                child: Column(
-                  children: const [
-                    // TODO: Need add time checking for the time passed for recent activities
-                    ActivityItem(
-                      title: "Completed 'Numbers 1-5' lesson",
-                      subtitle: "2 hours ago",
-                    ),
-                    ActivityItem(
-                      title: "Took 'Alphabet A-Z Test' quiz",
-                      subtitle: "1 day ago",
-                      score: "92%",
-                      scoreColor: Colors.green,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
+              // DashboardBlock(
+              //   title: "Recent Activities",
+              //   child: Column(
+              //     children: const [
+              //       ActivityItem(
+              //         title: "Completed 'Numbers 1-5' lesson",
+              //         subtitle: "2 hours ago",
+              //       ),
+              //       ActivityItem(
+              //         title: "Took 'Alphabet A-Z Test' quiz",
+              //         subtitle: "1 day ago",
+              //         score: "92%",
+              //         scoreColor: Colors.green,
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              // const SizedBox(height: 20),
             ],
           ),
         ),

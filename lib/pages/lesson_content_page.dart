@@ -1,16 +1,14 @@
-import 'dart:math' as math;
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:hand_landmarker/hand_landmarker.dart';
 import 'package:sign_language_recognition_app/models/lesson_model.dart';
 import 'package:sign_language_recognition_app/models/sign_model.dart';
-import 'package:sign_language_recognition_app/tflite_model/model_connection.dart';
-import 'package:sign_language_recognition_app/services/hand_detection_service.dart';
+import 'package:sign_language_recognition_app/services/hand_recognition_service.dart';
 import 'package:sign_language_recognition_app/painter/landmark_painter.dart';
 import 'package:sign_language_recognition_app/services/settings_service.dart';
 import 'package:sign_language_recognition_app/services/db_helper.dart';
+import 'package:sign_language_recognition_app/services/profile_service.dart';
+import 'package:sign_language_recognition_app/tflite_model/model_connection.dart';
 
 class LessonDetail {
   final Lesson info;
@@ -38,44 +36,28 @@ class LessonContentPage extends StatefulWidget {
 
 class _LessonContentPageState extends State<LessonContentPage> {
   late int currentIndex;
-  bool hasDetectedCorrectSign = false;  // Simulating the "Great Job" overlay
+  bool hasDetectedCorrectSign = false;
 
-  // Database-loaded data (replaces mockLessonDetail)
+  // Database-loaded data
   late Lesson lesson;
   late List<Sign> signs;
   final DBHelper dbHelper = DBHelper();
   bool _isLoading = true;
 
-  // Camera and detection
-  CameraController? cameraController;
-  bool _isCameraInitialized = false;
-  bool _isDetecting = false;
-  List<Hand> _landmarks = [];
-  String? _errorMessage;
-  
-  // Current prediction
+  // Hand recognition service (handles camera, detection, stability)
+  final HandRecognitionService _recognitionService = HandRecognitionService();
+
+  // Current prediction & landmarks from service stream
   List<String> prediction = [];
-  
-  // Hand detection service
-  final HandDetectionService _handDetectionService = HandDetectionService();
-  
-  // Shape stability tracking
-  final List<Float32List> _shapeWindow = [];
-  Float32List? _prevShape;
-  int _stableFrameCount = 0;
+  List<Hand> _landmarks = [];
   bool isStable = false;
-  
-  // Stability thresholds (tune per device)
-  static const int _shapeWindowSize = 7;
-  static const int _requiredStableFrames = 5;
-  static const double _frameDeltaThreshold = 0.015;
-  static const double _jitterThreshold = 0.010;
-  
+  String? _errorMessage;
+
   // Correct sign hold tracking
-  String? _lastCorrectSignDetected;
   DateTime? _correctSignHoldStart;
-  static const Duration _correctSignHoldDuration = Duration(seconds: 2, milliseconds: 500);
-  
+  static const Duration _correctSignHoldDuration =
+      Duration(seconds: 2, milliseconds: 500);
+
   // Hand landmark drawing
   bool _showLandmark = SettingsService.cachedShowLandmarks;
 
@@ -101,6 +83,8 @@ class _LessonContentPageState extends State<LessonContentPage> {
           description: 'Could not load lesson from database',
           signCount: 0,
           progress: 0.0,
+          isCompleted: false,
+          pointsClaimed: false,
         ),
       );
       
@@ -120,8 +104,8 @@ class _LessonContentPageState extends State<LessonContentPage> {
           _isLoading = false;
         });
         
-        // Now initialize camera and models
-        _initialize();
+        // Initialize service and hand recognition stream
+        _initRecognitionService();
       }
     } catch (e) {
       print('❌ Error loading lesson data: $e');
@@ -131,18 +115,69 @@ class _LessonContentPageState extends State<LessonContentPage> {
     }
   }
 
-  Future<void> _initialize() async {
-    await Future.wait([
-      initializeModelResources(),
-      _initializeCamera(),
-    ]);
+  Future<void> _initRecognitionService() async {
+    try {
+      await Future.wait([
+        initializeModelResources(),
+        _recognitionService.initialize(),
+      ]);
+
+      if (mounted) {
+        await _recognitionService.startCamera();
+        
+        // Subscribe to prediction stream
+        if (mounted) {
+          _subscribeToRecognitionStream();
+        }
+      }
+    } catch (e) {
+      print('❌ Error initializing recognition service: $e');
+      if (mounted) {
+        setState(() => _errorMessage = 'Failed to initialize camera: $e');
+      }
+    }
+  }
+
+  void _subscribeToRecognitionStream() {
+    _recognitionService.predictions.listen(
+      (result) {
+        if (!mounted) return;
+
+        setState(() {
+          prediction = result.prediction;
+          _landmarks = result.landmarks;
+          isStable = result.isStable;
+        });
+
+        // Check if current sign is correctly detected
+        if (isStable && prediction.isNotEmpty && signs.isNotEmpty) {
+          final currentSign = signs[currentIndex];
+          final detectedLabel = prediction[0];
+
+          if (detectedLabel == currentSign.targetLabel) {
+            _correctSignHoldStart ??= DateTime.now();
+
+            if (DateTime.now().difference(_correctSignHoldStart!) >=
+                _correctSignHoldDuration) {
+              onSignDetectedCorrectly();
+            }
+          } else {
+            _correctSignHoldStart = null;
+          }
+        }
+      },
+      onError: (error) {
+        print('❌ Stream error: $error');
+        if (mounted) {
+          setState(() => _errorMessage = 'Recognition error: $error');
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
-    cameraController?.stopImageStream();
-    cameraController?.dispose();
-    _handDetectionService.dispose();
+    _recognitionService.dispose();
     super.dispose();
   }
 
@@ -169,15 +204,16 @@ class _LessonContentPageState extends State<LessonContentPage> {
 
   void onSignDetectedCorrectly() async {
     if (!signs[currentIndex].isCompleted) {
-      // Mark as completed locally
+      // Mark as completed locally and show feedback
       setState(() {
         signs[currentIndex].isCompleted = true;
+        hasDetectedCorrectSign = true;
       });
       
       // Save progress to database
       try {
         final currentSign = signs[currentIndex];
-        await dbHelper.updateSignProgress(widget.lessonId, currentSign.id);
+        await dbHelper.updateSignProgress(currentSign.id);
         print('✅ Progress saved: Sign ${currentSign.name} (ID: ${currentSign.id}) marked as completed');
         
         // Check if lesson is now fully completed
@@ -186,6 +222,11 @@ class _LessonContentPageState extends State<LessonContentPage> {
         
         if (completedCount == totalCount && totalCount > 0) {
           print('🎉 LESSON FULLY COMPLETED! ($completedCount/$totalCount signs done)');
+          // Mark lesson as completed in database
+          await dbHelper.updateLessonProgress(widget.lessonId);
+          // Claim lesson points (50 points)
+          await ProfileService.claimLessonPoints(widget.lessonId);
+          print('✨ Claimed 50 points for completing lesson!');
         }
       } catch (e) {
         print('❌ Error saving progress: $e');
@@ -193,211 +234,8 @@ class _LessonContentPageState extends State<LessonContentPage> {
     }
   }
 
-  Future<void> _initializeCamera() async {
-    try {
-      final cameras = await availableCameras();
-      final frontCamera = cameras.firstWhere(
-        (camera) => camera.lensDirection == CameraLensDirection.front,
-      );
 
-      cameraController = CameraController(
-        frontCamera,
-        ResolutionPreset.medium,
-        enableAudio: false,
-      );
 
-      _handDetectionService.init();
-      await cameraController!.initialize();
-      
-      await cameraController!.startImageStream(processCameraImage);
-      
-      if (mounted) {
-        setState(() {
-          _isCameraInitialized = true;
-          _errorMessage = null;
-        });
-      }
-    } catch (e) {
-      print('Error initializing camera: $e');
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Failed to initialize camera: $e';
-        });
-      }
-    }
-  }
-
-  Future<void> processCameraImage(CameraImage image) async {
-    if (_isDetecting || !_isCameraInitialized) return;
-
-    _isDetecting = true;
-
-    try {
-      final hands = _handDetectionService.detect(
-        image,
-        cameraController!.description.sensorOrientation,
-      );
-
-      if (hands.isNotEmpty) {
-        final hand = hands[0];
-        final landmarks = hand.landmarks;
-
-        double wristX = landmarks[0].x;
-        double wristY = landmarks[0].y;
-        double wristZ = landmarks[0].z;
-
-        var inputBuffer = Float32List(63);
-        final int sensorOri = cameraController!.description.sensorOrientation;
-
-        // Build raw wrist-relative shape vector for stability check
-        final Float32List shapeVector = Float32List(63);
-
-        for (int i = 0; i < 21; i++) {
-          double xRel = landmarks[i].x - wristX;
-          double yRel = landmarks[i].y - wristY;
-          double zRel = landmarks[i].z - wristZ;
-
-          double x, y;
-          if (sensorOri == 270) {
-            x = yRel;
-            y = -xRel;
-          } else {
-            x = -yRel;
-            y = xRel;
-          }
-
-          // Store raw wrist-relative for stability check
-          shapeVector[i * 3 + 0] = x;
-          shapeVector[i * 3 + 1] = y;
-          shapeVector[i * 3 + 2] = zRel;
-
-          // Standardize for model input
-          inputBuffer[i * 3 + 0] = (x - mean[i * 3 + 0]) / scale[i * 3 + 0];
-          inputBuffer[i * 3 + 1] = (y - mean[i * 3 + 1]) / scale[i * 3 + 1];
-          inputBuffer[i * 3 + 2] = (zRel - mean[i * 3 + 2]) / scale[i * 3 + 2];
-        }
-
-        // Check shape stability before running prediction
-        if (!_isShapeStable(shapeVector)) {
-          if (mounted) setState(() => _landmarks = hands);
-          _isDetecting = false;
-          return;
-        }
-
-        final input = inputBuffer.reshape([1, 21, 3, 1]);
-        final raw = predict(input);
-
-        // Store prediction and check if detected sign matches the target sign
-        if (raw.isNotEmpty && raw[0] != "Detecting...") {
-          final detectedSign = raw[0];
-          final currentSign = signs[currentIndex];
-          
-          prediction = raw;
-
-          if (isStable && detectedSign == currentSign.targetLabel) {
-            // New correct sign detected
-            if (_lastCorrectSignDetected != detectedSign) {
-              _lastCorrectSignDetected = detectedSign;
-              _correctSignHoldStart = DateTime.now();
-            }
-            
-            // Check if held long enough
-            if (_correctSignHoldStart != null) {
-              final elapsedMs = DateTime.now().difference(_correctSignHoldStart!).inMilliseconds;
-              if (elapsedMs >= _correctSignHoldDuration.inMilliseconds) {
-                // Time reached - verify sign hasn't changed before showing feedback
-                if (_lastCorrectSignDetected == detectedSign && !hasDetectedCorrectSign) {
-                  if (mounted) {
-                    setState(() {
-                      hasDetectedCorrectSign = true;
-                    });
-                    onSignDetectedCorrectly();
-                  }
-                }
-              }
-            }
-          } else if (isStable) {
-            // Different sign detected - reset hold tracking
-            _lastCorrectSignDetected = null;
-            _correctSignHoldStart = null;
-          }
-        } else {
-          prediction = raw;
-          _lastCorrectSignDetected = null;
-          _correctSignHoldStart = null;
-        }
-      }
-
-      if (mounted) setState(() => _landmarks = hands);
-    } catch (e) {
-      debugPrint('Detection error: $e');
-    } finally {
-      _isDetecting = false;
-    }
-  }
-
-  /// Check if hand shape is stable enough for prediction.
-  bool _isShapeStable(Float32List currentShape) {
-    // 1) Compute frame-to-frame delta
-    double frameDelta = 0.0;
-    if (_prevShape != null) {
-      for (int i = 0; i < currentShape.length; i++) {
-        final d = currentShape[i] - _prevShape![i];
-        frameDelta += d * d;
-      }
-      frameDelta = math.sqrt(frameDelta / currentShape.length);
-    }
-
-    _prevShape = currentShape;
-
-    // 2) Add to rolling window
-    _shapeWindow.add(currentShape);
-    if (_shapeWindow.length > _shapeWindowSize) {
-      _shapeWindow.removeAt(0);
-    }
-
-    // Need full window before checking stability
-    if (_shapeWindow.length < _shapeWindowSize) {
-      _stableFrameCount = 0;
-      return false;
-    }
-
-    // 3) Compute jitter (per-dimension std dev, then average)
-    double jitterSum = 0.0;
-    for (int dim = 0; dim < currentShape.length; dim++) {
-      // Mean
-      double mean = 0.0;
-      for (final v in _shapeWindow) {
-        mean += v[dim];
-      }
-      mean /= _shapeWindow.length;
-
-      // Std dev
-      double varSum = 0.0;
-      for (final v in _shapeWindow) {
-        final d = v[dim] - mean;
-        varSum += d * d;
-      }
-      final std = math.sqrt(varSum / _shapeWindow.length);
-      jitterSum += std;
-    }
-    final windowJitter = jitterSum / currentShape.length;
-
-    // 4) Check both conditions
-    final frameStable = (frameDelta < _frameDeltaThreshold);
-    final windowStable = (windowJitter < _jitterThreshold);
-
-    if (frameStable && windowStable) {
-      _stableFrameCount++;
-    } else {
-      _stableFrameCount = 0;
-    }
-
-    final stability = _stableFrameCount >= _requiredStableFrames;
-    isStable = stability;
-
-    return stability;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -541,16 +379,16 @@ class _LessonContentPageState extends State<LessonContentPage> {
               alignment: Alignment.center,
               children: [
                 // Camera Preview
-                if (_isCameraInitialized && cameraController != null && cameraController!.value.isInitialized)
+                if (_recognitionService.isCameraInitialized && _recognitionService.cameraController != null && _recognitionService.cameraController!.value.isInitialized)
                   SizedBox.expand(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: FittedBox(
                         fit: BoxFit.cover,
                         child: SizedBox(
-                          width: cameraController!.value.previewSize!.height,
-                          height: cameraController!.value.previewSize!.width,
-                          child: CameraPreview(cameraController!),
+                          width: _recognitionService.cameraController!.value.previewSize!.height,
+                          height: _recognitionService.cameraController!.value.previewSize!.width,
+                          child: CameraPreview(_recognitionService.cameraController!),
                         ),
                       ),
                     ),
@@ -587,14 +425,14 @@ class _LessonContentPageState extends State<LessonContentPage> {
                 ),
 
                 // Hand landmark overlay
-                if (_isCameraInitialized && cameraController != null && cameraController!.value.isInitialized && _showLandmark)
+                if (_recognitionService.isCameraInitialized && _recognitionService.cameraController != null && _recognitionService.cameraController!.value.isInitialized && _showLandmark)
                   Positioned.fill(
                     child: CustomPaint(
                       painter: LandmarkPainter(
                         hands: _landmarks,
-                        previewSize: cameraController!.value.previewSize!,
-                        lensDirection: cameraController!.description.lensDirection,
-                        sensorOrientation: cameraController!.description.sensorOrientation,
+                        previewSize: _recognitionService.cameraController!.value.previewSize!,
+                        lensDirection: _recognitionService.cameraController!.description.lensDirection,
+                        sensorOrientation: _recognitionService.cameraController!.description.sensorOrientation,
                       ),
                     ),
                   ),
@@ -702,9 +540,7 @@ class _LessonContentPageState extends State<LessonContentPage> {
                     setState(() {
                       currentIndex--;
                       hasDetectedCorrectSign = false;
-                      _stableFrameCount = 0;
                       prediction = [];
-                      _lastCorrectSignDetected = null;
                       _correctSignHoldStart = null;
                     });
                   }
@@ -721,9 +557,7 @@ class _LessonContentPageState extends State<LessonContentPage> {
                 setState(() {
                   currentIndex++;
                   hasDetectedCorrectSign = false;
-                  _stableFrameCount = 0;
                   prediction = [];
-                  _lastCorrectSignDetected = null;
                   _correctSignHoldStart = null;
                 });
               } else {

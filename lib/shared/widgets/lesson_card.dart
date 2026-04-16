@@ -53,12 +53,12 @@ class LessonCard extends StatelessWidget {
         child: InkWell(
           onTap: () async {
             // Assuming route defined as /lessons/:id
-            print('\n🎓 LESSON CARD TAPPED:');
-            print('   Lesson ID: ${lesson.id}');
-            print('   Title: ${lesson.title}');
-            print('   Signs Count: ${lesson.signCount}');
-            print('   Current Progress: ${(lesson.progress * 100).toStringAsFixed(1)}%');
-            print('   Navigation: lesson_content route...\n');
+            // print('\n🎓 LESSON CARD TAPPED:');
+            // print('   Lesson ID: ${lesson.id}');
+            // print('   Title: ${lesson.title}');
+            // print('   Signs Count: ${lesson.signCount}');
+            // print('   Current Progress: ${(lesson.progress * 100).toStringAsFixed(1)}%');
+            // print('   Navigation: lesson_content route...\n');
             
             // Navigate to lesson content page
             await context.pushNamed(
@@ -68,7 +68,7 @@ class LessonCard extends StatelessWidget {
             
             // After returning, refresh the lessons list
             if (onNavigateBack != null) {
-              print('\n🔄 Returning from lesson - Refreshing lessons list...\n');
+              // print('\n🔄 Returning from lesson - Refreshing lessons list...\n');
               onNavigateBack!();
             }
           },

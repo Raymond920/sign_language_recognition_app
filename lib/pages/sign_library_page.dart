@@ -15,8 +15,6 @@ class _SignsLibraryPageState extends State<SignsLibraryPage> {
   final DBHelper _dbHelper = DBHelper();
   List<Sign> _allSigns = [];
   List<Sign> _filteredSigns = [];
-  bool _isLoading = true;
-  String? _errorMessage;
 
   final List<String> _categories = [
     'All',
@@ -48,14 +46,9 @@ class _SignsLibraryPageState extends State<SignsLibraryPage> {
       setState(() {
         _allSigns = signs;
         _filteredSigns = signs;
-        _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = 'Failed to load signs: $e';
-        _isLoading = false;
-      });
     }
   }
 

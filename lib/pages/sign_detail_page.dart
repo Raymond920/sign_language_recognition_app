@@ -142,22 +142,20 @@ class _SignDetailPageState extends State<SignDetailPage> {
   }
 
   Widget _buildMissingVideoState(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.video_library_outlined, size: 40),
-            const SizedBox(height: 12),
-            Text(
-              'No Tutorial Video',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            const Text('This sign does not have a YouTube video yet.'),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.video_library_outlined, size: 40),
+          const SizedBox(height: 12),
+          Text(
+            'No Tutorial Video',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          const Text('This sign does not have a YouTube video yet.'),
+        ],
       ),
     );
   }
@@ -243,7 +241,7 @@ class _SignDetailPageState extends State<SignDetailPage> {
           ),
           SizedBox(height: 10),
           Center(
-            child: Container(
+            child: SizedBox(
               height: 200,
               width: double.infinity,
               child: Image.asset(

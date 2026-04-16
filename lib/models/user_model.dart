@@ -1,29 +1,38 @@
+/// Single-user profile stored in shared preferences
+/// No USER table exists in database - this is purely for app state management
 class UserProfile {
-  final int id;
   final String username;
-  final int points;
+  final int totalPoints;
 
   UserProfile({
-    required this.id,
     required this.username,
-    required this.points,
+    required this.totalPoints,
   });
 
-  // Maps to the 'USER' table in your SQLite database
+  /// Create from shared preferences data
   factory UserProfile.fromMap(Map<String, dynamic> map) {
     return UserProfile(
-      id: map['user_id'],
-      username: map['username'] ?? 'User',
-      points: map['current_points'] ?? 0,
+      username: map['username'] ?? 'Learner',
+      totalPoints: map['total_points'] ?? 0,
     );
   }
 
-  // Helpful if you need to update the profile later
+  /// Convert to shared preferences format
   Map<String, dynamic> toMap() {
     return {
-      'user_id': id,
       'username': username,
-      'current_points': points,
+      'total_points': totalPoints,
     };
+  }
+
+  /// Create a copy with modifications
+  UserProfile copyWith({
+    String? username,
+    int? totalPoints,
+  }) {
+    return UserProfile(
+      username: username ?? this.username,
+      totalPoints: totalPoints ?? this.totalPoints,
+    );
   }
 }
