@@ -1,7 +1,11 @@
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sign_language_recognition_app/services/db_helper.dart';
+import 'package:sign_language_recognition_app/services/profile_service.dart';
 import 'package:sign_language_recognition_app/services/settings_service.dart';
+import 'package:sign_language_recognition_app/services/study_tracker_service.dart';
 import 'package:sign_language_recognition_app/services/tts_service.dart';
 import 'package:sign_language_recognition_app/shared/widgets/reset_data_dialog.dart';
 import 'package:sign_language_recognition_app/shared/widgets/custom_slider.dart';
@@ -122,6 +126,36 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     await TtsService.speakText("I will now speak at this pace.");
+  }
+
+  Future<void> _resetLearningData() async {
+    try {
+      final dbHelper = DBHelper();
+      await dbHelper.resetLearningProgress();
+      await ProfileService.resetProgressOnly();
+      await StudyTrackerService.clearSessions();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Learning progress has been reset.'),
+        ),
+      );
+
+      // Prefer popping settings so pending push() callers can complete and clear UI state.
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to reset data: $e'),
+        ),
+      );
+    }
   }
 
   @override
@@ -360,12 +394,16 @@ class _SettingsPageState extends State<SettingsPage> {
                                 if (SettingsService.cachedHaptic) {
                                   HapticFeedback.vibrate();
                                 }
-                                showDialog(
+                                showDialog<bool>(
                                   context: context,
                                   builder: (BuildContext context) {
-                                    return ResetDataDialog();
+                                    return const ResetDataDialog();
                                   },
-                                );
+                                ).then((confirmed) {
+                                  if (confirmed == true) {
+                                    _resetLearningData();
+                                  }
+                                });
                               },
                               child: Text(
                                 "Reset Learning Progress",

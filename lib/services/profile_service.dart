@@ -182,6 +182,18 @@ class ProfileService {
   /// Get total points from cache
   static int getTotalPoints() => _cachedTotalPoints;
 
+  /// Reset progress-related profile data only.
+  /// Keeps identity data such as username and profile image untouched.
+  static Future<void> resetProgressOnly() async {
+    _cachedTotalPoints = 0;
+    totalPointsNotifier.value = _cachedTotalPoints;
+    quizCompletionNotifier.value = 0;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyTotalPoints);
+    print('✓ [ProfileService] Progress-only profile data reset');
+  }
+
   /// Claim quiz points (100 points if score is 100%)
   /// Returns true if points were claimed, false if already claimed
   static Future<bool> claimQuizPoints(int quizId, int bestScore) async {

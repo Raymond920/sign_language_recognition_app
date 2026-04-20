@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:sign_language_recognition_app/models/achievement_model.dart';
+import 'package:sign_language_recognition_app/services/achivement_service.dart';
 import 'package:sign_language_recognition_app/services/profile_service.dart';
 import 'package:sign_language_recognition_app/services/db_helper.dart';
+import 'package:sign_language_recognition_app/services/study_tracker_service.dart';
 import 'package:sign_language_recognition_app/shared/widgets/achievement_card.dart';
 import 'package:sign_language_recognition_app/shared/widgets/stat_detail_card.dart';
 import '../shared/widgets/dashboard_block.dart';
@@ -32,7 +35,11 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
   int _totalQuizzes = 0;
   double _avgQuizScore = 0;
   int _signsLearned = 0;
+  int _dayStreak = 0;
+  double _totalStudyTime = 0.0;
+  Map<String, bool> _achievementStatus = {};
   final DBHelper _dbHelper = DBHelper();
+  final AchievementService _achievementService = AchievementService();
 
   @override
   void initState() {
@@ -70,6 +77,11 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
       
       final allSigns = await _dbHelper.getAllSigns();
       final signsLearned = allSigns.where((s) => s.isCompleted).length;
+      
+      // Load study tracking data
+      final dayStreak = await StudyTrackerService.calculateDayStreak();
+      final totalStudyHours = await StudyTrackerService.getTotalStudyTimeInHours();
+      final achievementStatus = await _achievementService.getAchievementStatusMap();
 
       setState(() {
         _totalLessons = allLessons.length;
@@ -78,6 +90,9 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
         _quizzesCompleted = quizzesCompleted;
         _avgQuizScore = avgQuizScore;
         _signsLearned = signsLearned;
+        _dayStreak = dayStreak;
+        _totalStudyTime = totalStudyHours;
+        _achievementStatus = achievementStatus;
       });
     } catch (e) {
       print('❌ Error loading progress data: $e');
@@ -265,48 +280,15 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
                       crossAxisCount: 2,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
-                      childAspectRatio: 0.84, // Adjust based on your text length
-                      children: const [
-
-                        // TODO: Change the achievements details to follow sqlite
-                        AchievementCard(
-                          emoji: "🎯",
-                          title: "First Steps",
-                          description: "Completed first lesson",
-                          isEarned: true,
-                        ),
-                        AchievementCard(
-                          emoji: "🔡",
-                          title: "Alphabet Master",
-                          description: "Mastered all alphabet signs",
-                          isEarned: true,
-                        ),
-                        AchievementCard(
-                          emoji: "🔢",
-                          title: "Number Ninja",
-                          description: "Perfect score in numbers quiz",
-                          isEarned: true,
-                        ),
-                        AchievementCard(
-                          emoji: "⚡",
-                          title: "Quick Learner",
-                          description: "Complete 5 lessons in one day",
-                          isEarned: false,
-                        ),
-                        AchievementCard(
-                          emoji: "💯",
-                          title: "Perfect Score",
-                          description: "Get 100% in any quiz",
-                          isEarned: false,
-                        ),
-                        AchievementCard(
-                          emoji: "🔥",
-                          title: "Streak Master",
-                          description: "7 day learning streak",
-                          isEarned: false,
-                        ),
-                        // ... more cards
-                      ],
+                      childAspectRatio: 0.8, // Adjust based on your text length
+                      children: AchievementService.allAchievements.map((achievement) {
+                        return AchievementCard(
+                          emoji: achievement.emoji,
+                          title: achievement.title,
+                          description: achievement.description,
+                          isEarned: _achievementStatus[achievement.id] ?? false,
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),
@@ -341,16 +323,16 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
                           value: "${_avgQuizScore.toStringAsFixed(1)}%",
                           label: "Avg Quiz Score",
                         ),
-                        const StatDetailCard(
+                        StatDetailCard(
                           icon: Icons.access_time_rounded,
                           iconColor: Colors.deepPurpleAccent,
-                          value: "12h",
+                          value: "${_totalStudyTime.toStringAsFixed(1)}h",
                           label: "Study Time",
                         ),
-                        const StatDetailCard(
+                        StatDetailCard(
                           icon: Icons.emoji_events_outlined,
                           iconColor: Colors.orange,
-                          value: "5",
+                          value: _dayStreak.toString(),
                           label: "Day Streak",
                         ),
                       ],

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sign_language_recognition_app/services/settings_service.dart';
 import 'package:sign_language_recognition_app/services/profile_service.dart';
 import 'package:sign_language_recognition_app/services/db_helper.dart';
+import 'package:sign_language_recognition_app/shared/widgets/achievemnt_banner.dart';
 import 'package:sign_language_recognition_app/shared/widgets/navigation_button.dart';
 import 'package:sign_language_recognition_app/shared/widgets/profile_avatar.dart';
 import '../shared/widgets/dashboard_block.dart';
@@ -215,6 +216,26 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
               const SizedBox(height: 40),
+              // TODO: debug achivement banner notification.
+              // TextButton.icon(
+              //   onPressed: () {
+              //     showAchievementNotification('🎯 First Steps unlocked (debug)');
+              //   },
+              //   icon: const Icon(Icons.emoji_events_outlined),
+              //   label: const Text('Show Achievement Banner'),
+              //   style: TextButton.styleFrom(
+              //     foregroundColor: Colors.white,
+              //     backgroundColor: Colors.orange,
+              //     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              //     shape: RoundedRectangleBorder(
+              //       borderRadius: BorderRadius.circular(12),
+              //     ),
+              //     textStyle: const TextStyle(
+              //       fontSize: 14,
+              //       fontWeight: FontWeight.w600,
+              //     ),
+              //   ),
+              // ),
               const LearningProgressButton(),
               const SizedBox(height: 12),
               GridView.count(

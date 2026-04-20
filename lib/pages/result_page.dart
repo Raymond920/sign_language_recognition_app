@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sign_language_recognition_app/services/achivement_service.dart';
 import 'package:sign_language_recognition_app/services/db_helper.dart';
 import 'package:sign_language_recognition_app/services/profile_service.dart';
 
@@ -40,6 +41,7 @@ class _ResultPageState extends State<ResultPage> {
   Future<void> _saveScoreToDatabase() async {
     try {
       final scorePercentage = _scorePercentage.toInt();
+      bool shouldCheckAchievements = false;
       
       // Get the current best score for this quiz from QUIZ_PROGRESS table
       final db = await _dbHelper.database;
@@ -60,6 +62,7 @@ class _ResultPageState extends State<ResultPage> {
       // Compare and save only if new score is higher
       if (scorePercentage > oldBestScore) {
         await _dbHelper.updateQuizScore(widget.quizId, scorePercentage);
+        shouldCheckAchievements = true;
         
         // Notify ALL listeners that quiz was completed (only if score > 60)
         if (scorePercentage > 60) {
@@ -82,10 +85,16 @@ class _ResultPageState extends State<ResultPage> {
       } else if (scorePercentage == oldBestScore && scorePercentage > 60) {
         // Still mark as "viewed" for tracking even if score didn't change (only if > 60)
         ProfileService.markQuizCompleted(widget.quizId);
+        shouldCheckAchievements = true;
       } else if (scorePercentage > 60 && scorePercentage < oldBestScore) {
         // Still mark as "viewed" for tracking even if score is lower (only if > 60)
         ProfileService.markQuizCompleted(widget.quizId);
+        shouldCheckAchievements = true;
       } else {
+      }
+
+      if (shouldCheckAchievements) {
+        await AchievementService().checkAllAchievements();
       }
     } catch (e) {
       print('❌ Error saving quiz score: $e');

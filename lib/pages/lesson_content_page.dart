@@ -3,11 +3,13 @@ import 'package:camera/camera.dart';
 import 'package:hand_landmarker/hand_landmarker.dart';
 import 'package:sign_language_recognition_app/models/lesson_model.dart';
 import 'package:sign_language_recognition_app/models/sign_model.dart';
+import 'package:sign_language_recognition_app/services/achivement_service.dart';
 import 'package:sign_language_recognition_app/services/hand_recognition_service.dart';
 import 'package:sign_language_recognition_app/painter/landmark_painter.dart';
 import 'package:sign_language_recognition_app/services/settings_service.dart';
 import 'package:sign_language_recognition_app/services/db_helper.dart';
 import 'package:sign_language_recognition_app/services/profile_service.dart';
+import 'package:sign_language_recognition_app/services/study_tracker_service.dart';
 import 'package:sign_language_recognition_app/tflite_model/model_connection.dart';
 
 class LessonDetail {
@@ -60,6 +62,9 @@ class _LessonContentPageState extends State<LessonContentPage> {
 
   // Hand landmark drawing
   bool _showLandmark = SettingsService.cachedShowLandmarks;
+  
+  // Study session tracking
+  late DateTime _lessonStartTime;
 
   @override
   void initState() {
@@ -103,6 +108,9 @@ class _LessonContentPageState extends State<LessonContentPage> {
           currentIndex = calculatedIndex;
           _isLoading = false;
         });
+        
+        // Track lesson start time
+        _lessonStartTime = DateTime.now();
         
         // Initialize service and hand recognition stream
         _initRecognitionService();
@@ -227,6 +235,21 @@ class _LessonContentPageState extends State<LessonContentPage> {
           // Claim lesson points (50 points)
           await ProfileService.claimLessonPoints(widget.lessonId);
           print('✨ Claimed 50 points for completing lesson!');
+
+          // Track lesson completion for achievement checks
+          await StudyTrackerService.recordLessonCompletion(widget.lessonId);
+
+          // Check achievements
+          await AchievementService().checkAllAchievements();
+          
+          // Record study session
+          try {
+            final durationSeconds = DateTime.now().difference(_lessonStartTime).inSeconds;
+            await StudyTrackerService.recordStudySession(durationSeconds);
+            print('⏱️ Study session recorded: ${(durationSeconds / 60).toStringAsFixed(2)} minutes');
+          } catch (e) {
+            print('⚠️ Error recording study session: $e');
+          }
         }
       } catch (e) {
         print('❌ Error saving progress: $e');

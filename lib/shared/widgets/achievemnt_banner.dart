@@ -1,17 +1,58 @@
 import 'package:flutter/material.dart';
 
-void showAchievementNotification(BuildContext context, String message) {
-  final overlay = Overlay.of(context);
-  final overlayEntry = OverlayEntry(
-    builder: (context) => _AchievementBanner(message: message),
-  );
+final ValueNotifier<String?> achievementBannerMessage =
+    ValueNotifier<String?>(null);
 
-  overlay.insert(overlayEntry);
+void showAchievementNotification(String message) {
+  achievementBannerMessage.value = message;
 
-  // Remove after 3 seconds
-  Future.delayed(Duration(seconds: 3), () {
-    overlayEntry.remove();
+  Future.delayed(const Duration(seconds: 3), () {
+    if (achievementBannerMessage.value == message) {
+      achievementBannerMessage.value = null;
+    }
   });
+}
+
+class AchievementBannerHost extends StatelessWidget {
+  final Widget child;
+
+  const AchievementBannerHost({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        child,
+        ValueListenableBuilder<String?>(
+          valueListenable: achievementBannerMessage,
+          builder: (context, message, _) {
+            if (message == null) {
+              return const SizedBox.shrink();
+            }
+
+            return Positioned(
+              top: 0,
+              left: 16,
+              right: 16,
+              child: SafeArea(
+                bottom: false,
+                child: Dismissible(
+                  key: ValueKey(message),
+                  direction: DismissDirection.up,
+                  onDismissed: (_) {
+                    if (achievementBannerMessage.value == message) {
+                      achievementBannerMessage.value = null;
+                    }
+                  },
+                  child: _AchievementBanner(message: message),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
 }
 
 class _AchievementBanner extends StatefulWidget {
@@ -50,31 +91,45 @@ class _AchievementBannerState extends State<_AchievementBanner>
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Positioned(
-      top: 50,
-      left: 16,
-      right: 16,
-      child: SlideTransition(
-        position: _animation,
-        child: Material(
-          elevation: 10,
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.green,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(Icons.emoji_events, color: Colors.white),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    widget.message,
-                    style: TextStyle(color: Colors.white),
-                  ),
+    return SlideTransition(
+      position: _animation,
+      child: Material(
+        elevation: 10,
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(Icons.workspace_premium, color: Colors.amber),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  widget.message,
+                  style: const TextStyle(color: Colors.black),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () {
+                  if (achievementBannerMessage.value == widget.message) {
+                    achievementBannerMessage.value = null;
+                  }
+                },
+                icon: const Icon(Icons.close, color: Colors.blueGrey),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                splashRadius: 18,
+              ),
+            ],
           ),
         ),
       ),

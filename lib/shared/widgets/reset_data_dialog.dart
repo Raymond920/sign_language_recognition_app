@@ -65,9 +65,7 @@ class ResetDataDialog extends StatelessWidget {
                       if (SettingsService.cachedHaptic) {
                         HapticFeedback.vibrate();
                       }
-                      // TODO: Add data delete action at here
-                      print("@DEBUG: Reset button on pressed.");
-                      Navigator.of(context).pop();
+                      Navigator.of(context).pop(true);
                     },
                     child: Text(
                       "Reset",

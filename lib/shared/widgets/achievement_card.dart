@@ -37,13 +37,14 @@ class AchievementCard extends StatelessWidget {
             children: [
               Text(
                 emoji, 
-                style: TextStyle(fontSize: 20),
+                style: const TextStyle(fontSize: 20),
               ),
-              SizedBox(width: 8,),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title, 
-                  softWrap: true,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -53,21 +54,25 @@ class AchievementCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8,),
+          const SizedBox(height: 6),
 
           // Description
-          Text(
-            description,
-             style: TextStyle(
-              fontSize: 13,
-              color: textColor.withValues(alpha: 0.8),
-              height: 1.4,
-             ),
+          Expanded(
+            child: Text(
+              description,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                color: textColor.withValues(alpha: 0.8),
+                height: 1.4,
+              ),
+            ),
           ),
 
           // Earned badge (Shown when isEarned is true)
           if (isEarned) ...[
-            const SizedBox(height: 10,),
+            const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -78,8 +83,8 @@ class AchievementCard extends StatelessWidget {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.workspace_premium, size: 14, color: Color(0xDDB45309),),
-                  SizedBox(width: 4,),
+                  Icon(Icons.workspace_premium, size: 14, color: Color(0xDDB45309)),
+                  SizedBox(width: 4),
                   Text(
                     "Earned",
                     style: TextStyle(
@@ -92,7 +97,7 @@ class AchievementCard extends StatelessWidget {
               ),
             )
           ] else ...[
-            const SizedBox(height: 26,)
+            const SizedBox(height: 8)
           ]
         ],
       ),

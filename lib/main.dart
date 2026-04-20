@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'router/app_router.dart';
 import 'tflite_model/model_connection.dart';
+import 'shared/widgets/achievemnt_banner.dart';
 
 import 'services/settings_service.dart';
 import 'services/profile_service.dart';
@@ -36,6 +37,11 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       routerConfig: AppRouter.router,
+      builder: (context, child) {
+        return AchievementBannerHost(
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

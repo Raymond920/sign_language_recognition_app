@@ -6,6 +6,7 @@ import 'package:sign_language_recognition_app/models/quiz_model.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/lesson_model.dart';
 import '../models/sign_model.dart';
+import '../models/achievement_model.dart';
 
 class DBHelper {
   // Singleton pattern: ensures only one instance of DBHelper exists
@@ -178,5 +179,50 @@ class DBHelper {
       SET points_claimed = 1
       WHERE quiz_id = ?
     ''', [quizId]);
+  }
+
+  // Get user achievements
+Future<List<UserAchievement>> getUserAchievements() async {
+  final db = await database;
+  final List<Map<String, dynamic>> maps = await db.rawQuery('''
+    SELECT * FROM ACHIEVEMENT_PROGRESS
+  ''');
+  return maps.map((m) => UserAchievement.fromMap(m)).toList();
+}
+
+// Check if achievement is earned
+Future<bool> isAchievementEarned(String achievementId) async {
+  final db = await database;
+  final result = await db.rawQuery('''
+    SELECT is_earned FROM ACHIEVEMENT_PROGRESS 
+    WHERE achievement_id = ?
+  ''', [achievementId]);
+  
+  return result.isNotEmpty && (result.first['is_earned'] as int) == 1;
+}
+
+// Save achievement as earned
+Future<void> saveAchievementEarned(String achievementId) async {
+  final db = await database;
+  await db.insert(
+    'ACHIEVEMENT_PROGRESS',
+    {
+      'achievement_id': achievementId,
+      'is_earned': 1,
+      'earned_date': DateTime.now().toIso8601String(),
+    },
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+}
+
+  // Reset only user learning data while preserving base lesson/quiz/sign content.
+  Future<void> resetLearningProgress() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete('SIGN_PROGRESS');
+      await txn.delete('LESSON_PROGRESS');
+      await txn.delete('QUIZ_PROGRESS');
+      await txn.delete('ACHIEVEMENT_PROGRESS');
+    });
   }
 }

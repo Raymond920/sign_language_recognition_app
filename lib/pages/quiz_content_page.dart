@@ -7,6 +7,7 @@ import 'package:sign_language_recognition_app/services/db_helper.dart';
 import 'package:sign_language_recognition_app/services/hand_recognition_service.dart';
 import 'package:sign_language_recognition_app/painter/landmark_painter.dart';
 import 'package:sign_language_recognition_app/services/settings_service.dart';
+import 'package:sign_language_recognition_app/services/study_tracker_service.dart';
 import 'package:sign_language_recognition_app/tflite_model/model_connection.dart';
 import 'package:sign_language_recognition_app/pages/result_page.dart';
 
@@ -48,6 +49,9 @@ class _QuizContentPageState extends State<QuizContentPage> {
 
   late ScrollController _scrollController;
   bool _isDisposed = false;  // Track if resources have been disposed
+  
+  // Study session tracking
+  late DateTime _quizStartTime;
 
   @override
   void initState() {
@@ -110,6 +114,8 @@ class _QuizContentPageState extends State<QuizContentPage> {
       ]);
 
       if (mounted) {
+        // Track quiz start time
+        _quizStartTime = DateTime.now();
         await _recognitionService.startCamera();
         _subscribeToRecognitionStream();
       }
@@ -170,7 +176,7 @@ class _QuizContentPageState extends State<QuizContentPage> {
     );
   }
 
-  void _nextQuestion() {
+  Future<void> _nextQuestion() async {
     final question = questions[currentQuestionIndex];
     
     // Determine the user's answer (either from options or sign recognition)
@@ -200,30 +206,39 @@ class _QuizContentPageState extends State<QuizContentPage> {
         // Quiz completed
         _isDisposed = true;  // Mark as disposed to prevent further controller use
         _recognitionService.dispose();  // Stop camera immediately
-        
-        if (mounted) {
-          // Navigate after current frame completes
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ResultPage(
-                    quizId: widget.quizId,
-                    quizTitle: quiz.title,
-                    correctScore: _correctScore,
-                    wrongScore: _wrongScore,
-                  ),
-                ),
-              );
-            }
-          });
-        }
       }
     });
     
-    // Scroll to top only if not the last question (not disposed yet)
-    if (!isLastQuestion && !_isDisposed) {
+    // Handle quiz completion after setState
+    if (isLastQuestion) {
+      // Record study session
+      try {
+        final durationSeconds = DateTime.now().difference(_quizStartTime).inSeconds;
+        await StudyTrackerService.recordStudySession(durationSeconds);
+        print('⏱️ Study session recorded: ${(durationSeconds / 60).toStringAsFixed(2)} minutes');
+      } catch (e) {
+        print('⚠️ Error recording quiz study session: $e');
+      }
+      
+      if (mounted) {
+        // Navigate after current frame completes
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ResultPage(
+                  quizId: widget.quizId,
+                  quizTitle: quiz.title,
+                  correctScore: _correctScore,
+                  wrongScore: _wrongScore,
+                ),
+              ),
+            );
+          }
+        });
+      }
+    } else if (!_isDisposed) {
       _scrollController.animateTo(
         0,
         duration: const Duration(milliseconds: 300),
