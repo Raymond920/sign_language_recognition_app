@@ -105,6 +105,9 @@ class _QuizzesListPageState extends State<QuizzesListPage> with WidgetsBindingOb
             ? 0
             : attemptedQuizzes.map((q) => q.bestScore).reduce((a, b) => a + b) /
               quizzesAttempted;
+          final Color statTitleColor = Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : const Color.fromRGBO(0, 0, 0, 0.5);
           print('✅ Success state: Rendering ${quizzes.length} quizzes');
 
           return Padding(
@@ -126,19 +129,19 @@ class _QuizzesListPageState extends State<QuizzesListPage> with WidgetsBindingOb
                           title: "Passed",
                           value: quizzesPassed.toString(),
                           valueColor: Color.fromRGBO(99, 102, 241, 1.0),
-                          titleColor: Color.fromRGBO(0, 0, 0, 0.5),
+                          titleColor: statTitleColor,
                         ),
                         StatItemData(
                           title: "Avg Score",
                           value: "${avgScore.toStringAsFixed(1)}%",
                           valueColor: Color.fromRGBO(6, 182, 212, 1.0),
-                          titleColor: Color.fromRGBO(0, 0, 0, 0.5),
+                          titleColor: statTitleColor,
                         ),
                         StatItemData(
                           title: "Remaining",
                           value: (quizzes.length - quizzesPassed).toString(),
                           valueColor: Color.fromRGBO(99, 102, 241, 1.0),
-                          titleColor: Color.fromRGBO(0, 0, 0, 0.5),
+                          titleColor: statTitleColor,
                         ),
                       ],
                     ),

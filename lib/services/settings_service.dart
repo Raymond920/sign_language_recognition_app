@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -18,6 +19,7 @@ class SettingsService {
   static bool _cachedShowLandmarks = true;
   static bool _cachedHaptic = true;
   static bool _cachedAutoplay = true;
+  static final ValueNotifier<bool> darkModeNotifier = ValueNotifier<bool>(_cachedDarkMode);
 
   static bool get cachedTtsEnabled => _cachedTtsEnabled;
   static String get cachedVoice => _cachedVoice;
@@ -48,6 +50,7 @@ class SettingsService {
 
   static Future<void> setDarkMode(bool value) async {
     _cachedDarkMode = value;
+    darkModeNotifier.value = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keydarkMode, value);
   }
@@ -78,6 +81,7 @@ class SettingsService {
     _cachedVoice = prefs.getString(_keyVoice) ?? "Female Voice";
     _cachedSpeed = prefs.getDouble(_keySpeed) ?? 0.4;
     _cachedDarkMode = prefs.getBool(_keydarkMode) ?? false;
+    darkModeNotifier.value = _cachedDarkMode;
     _cachedShowLandmarks = prefs.getBool(_keyShowLandmarks) ?? true;
     _cachedHaptic = prefs.getBool(_keyHaptic) ?? true;
     _cachedAutoplay = prefs.getBool(_keyAutoplay) ?? true;

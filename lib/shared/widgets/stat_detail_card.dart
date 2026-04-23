@@ -16,10 +16,13 @@ class StatDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6), // Light gray background
+        color: isDark ? colorScheme.surfaceContainerHighest : const Color(0xFFF3F4F6), // Light gray background
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -36,10 +39,10 @@ class StatDetailCard extends StatelessWidget {
           // Value (e.g., 42, 88%)
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: isDark ? colorScheme.onSurface : Colors.black,
             ),
           ),
           
@@ -51,7 +54,7 @@ class StatDetailCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade600,
+              color: isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600,
               fontWeight: FontWeight.w500,
             ),
           ),

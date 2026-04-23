@@ -55,128 +55,154 @@ class _HomePageState extends State<HomePage> {
   Widget _drawer() {
     print('🏠 [HOME] _drawer() building...');
     print('🏠 [HOME] _drawer() cached image: ${ProfileService.cachedProfileImage?.path}');
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+      child: Column(
         children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.white,
-            ),
-            child: InkWell(
-              onTap: () {
-                Navigator.pop(context); // close the drawer
-                context.push("/profile");
-              },
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  // Wrap ProfileAvatar in ValueListenableBuilder to react to profile image changes
-                  ValueListenableBuilder<String?>(
-                    valueListenable: ProfileService.profileImageNotifier,
-                    builder: (context, imagePath, _) {
-                      print('🏠 [HOME] ValueListenableBuilder updated with path: $imagePath');
-                      return ProfileAvatar(
-                        profileImage: imagePath != null ? File(imagePath) : null,
-                        radius: 45,
-                        backgroundColor: Colors.deepPurple[100]!,
-                        iconData: Icons.person,
-                        iconColor: Colors.deepPurple,
-                        iconSize: 80,
-                      );
-                    },
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                DrawerHeader(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    border: Border(
+                      bottom: BorderSide(color: colorScheme.outlineVariant),
+                    ),
                   ),
-                  SizedBox(width: 20,),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'View Profile',
-                          softWrap: true,
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: () {
+                      Navigator.pop(context); // close the drawer
+                      context.push("/profile");
+                    },
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        // Wrap ProfileAvatar in ValueListenableBuilder to react to profile image changes
+                        ValueListenableBuilder<String?>(
+                          valueListenable: ProfileService.profileImageNotifier,
+                          builder: (context, imagePath, _) {
+                            print('🏠 [HOME] ValueListenableBuilder updated with path: $imagePath');
+                            return ProfileAvatar(
+                              profileImage: imagePath != null ? File(imagePath) : null,
+                              radius: 45,
+                              backgroundColor: colorScheme.primary.withAlpha(40),
+                              iconData: Icons.person,
+                              iconColor: colorScheme.primary,
+                              iconSize: 80,
+                            );
+                          },
                         ),
-                        Text(
-                          'Manage your account',
-                          softWrap: true,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
+                        SizedBox(width: 20,),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'View Profile',
+                                softWrap: true,
+                                style: TextStyle(
+                                  color: colorScheme.onSurface,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Manage your account',
+                                softWrap: true,
+                                style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
+                        )
                       ],
                     ),
                   )
-                ],
-              ),
-            )
-          ),
-          ListTile(
-            leading: Icon(Icons.camera_alt_outlined),
-            title: Text('Recognize Signs'),
-            onTap: () {
-              Navigator.pop(context);
-              context.push("/recognize-signs");
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.book_outlined),
-            title: Text('MSL Library'),
-            onTap: () {
-              Navigator.pop(context);
-              context.push("/signs-library");
-            },
-          ),
-          ExpansionTile(
-            leading: Icon(Icons.school_outlined),
-            title: Text('Practise MSL'),
-            shape: const Border(),
-            collapsedShape: const Border(),
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(left: 20.0),
-                child: ListTile(
-                  leading: Icon(Icons.menu_book_outlined),
-                  title: Text('Attend Lessons'),
+                ),
+                ListTile(
+                  leading: Icon(Icons.camera_alt_outlined),
+                  title: Text('Recognize Signs'),
                   onTap: () {
                     Navigator.pop(context);
-                    context.push("/lessons");
+                    context.push("/recognize-signs");
                   },
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 20.0),
-                child: ListTile(
-                  leading: Icon(Icons.psychology_outlined),
-                  title: Text('Take Quizzes'),
+                ListTile(
+                  leading: Icon(Icons.book_outlined),
+                  title: Text('MSL Library'),
                   onTap: () {
                     Navigator.pop(context);
-                    context.push("/quizzes-list");
+                    context.push("/signs-library");
                   },
                 ),
-              )
-            ],
-          ),          
-          ListTile(
-            leading: Icon(Icons.bar_chart_outlined),
-            title: Text('Progress Dashboard'),
-            onTap: () {
-              Navigator.pop(context);
-              context.push("/learning-progress");
-            },
+                ExpansionTile(
+                  leading: Icon(Icons.school_outlined),
+                  title: Text('Practise MSL'),
+                  shape: const Border(),
+                  collapsedShape: const Border(),
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(left: 20.0),
+                      child: ListTile(
+                        leading: Icon(Icons.menu_book_outlined),
+                        title: Text('Attend Lessons'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.push("/lessons");
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 20.0),
+                      child: ListTile(
+                        leading: Icon(Icons.psychology_outlined),
+                        title: Text('Take Quizzes'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.push("/quizzes-list");
+                        },
+                      ),
+                    )
+                  ],
+                ),          
+                ListTile(
+                  leading: Icon(Icons.bar_chart_outlined),
+                  title: Text('Progress Dashboard'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push("/learning-progress");
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.settings_outlined),
+                  title: Text('Settings'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push("/settings");
+                  },
+                ),
+              ],
+            ),
           ),
+          Divider(height: 1),
           ListTile(
-            leading: Icon(Icons.settings_outlined),
-            title: Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-              context.push("/settings");
+            leading: Icon(
+              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+            ),
+            title: Text(isDark ? 'Light Mode' : 'Dark Mode'),
+            onTap: () async {
+              if (SettingsService.cachedHaptic) {
+                HapticFeedback.selectionClick();
+              }
+              await SettingsService.setDarkMode(!isDark);
             },
           ),
         ],
@@ -264,10 +290,12 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.cyan,
                     route: "/signs-library", 
                     description: "Browse sign database"),
-                  const NavigationButton(
+                  NavigationButton(
                     title: "Settings", 
                     icon: Icons.settings, 
-                    color: Colors.black54,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey.shade300
+                        : Colors.black54,
                     route: "/settings", 
                     description: "App preferences"),
                 ],
@@ -287,6 +315,9 @@ class WelcomeDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         Text(
@@ -298,9 +329,9 @@ class WelcomeDialog extends StatelessWidget {
         ),
         Text(
           "Continue your MSL learning journey.",
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16, 
-            color: Color.fromRGBO(0, 0, 0, 0.4)
+            color: isDark ? colorScheme.onSurfaceVariant : const Color.fromRGBO(0, 0, 0, 0.4)
           ),
         ),
       ],

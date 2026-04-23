@@ -68,6 +68,9 @@ class _SignsLibraryPageState extends State<SignsLibraryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -81,9 +84,9 @@ class _SignsLibraryPageState extends State<SignsLibraryPage> {
             SearchBar(
               controller: _searchController,
               hintText: 'Search for signs...',
-              leading: const Icon(
+              leading: Icon(
                 Icons.search,
-                color: Color.fromRGBO(113, 113, 130, 1),
+                color: isDark ? colorScheme.onSurfaceVariant : const Color.fromRGBO(113, 113, 130, 1),
               ),
               onChanged: (value) {
                 // The listener already handles filtering
@@ -95,10 +98,15 @@ class _SignsLibraryPageState extends State<SignsLibraryPage> {
               shape: WidgetStateProperty.all(
                 RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0), // Slightly rounded corners
-                  side: const BorderSide(color: Color.fromRGBO(227, 230, 234, 1), width: 0.5), // Light grey border
+                  side: BorderSide(
+                    color: isDark ? colorScheme.outlineVariant : const Color.fromRGBO(227, 230, 234, 1),
+                    width: 0.5,
+                  ), // Light grey border
                 ),
               ),
-              backgroundColor: WidgetStateProperty.all(Color.fromRGBO(243, 243, 245, 1)),
+              backgroundColor: WidgetStateProperty.all(
+                isDark ? colorScheme.surfaceContainerHighest : const Color.fromRGBO(243, 243, 245, 1),
+              ),
             ),
             SizedBox(height: 10),
             SizedBox(
@@ -113,9 +121,16 @@ class _SignsLibraryPageState extends State<SignsLibraryPage> {
                       child: ChoiceChip(
                         label: Align(
                           alignment: Alignment.center,
-                          child: Text(category),
+                          child: Text(
+                            category,
+                            style: TextStyle(
+                              color: _selectedCategory == category
+                                  ? Theme.of(context).colorScheme.onPrimary
+                                  : (isDark ? colorScheme.onSurface : null),
+                            ),
+                          ),
                         ),
-                        backgroundColor: Colors.white,
+                        backgroundColor: isDark ? colorScheme.surface : Colors.white,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         visualDensity: VisualDensity.compact,
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -131,8 +146,8 @@ class _SignsLibraryPageState extends State<SignsLibraryPage> {
                           });
                         },
                         selectedColor: Theme.of(context).colorScheme.primary,
-                        labelStyle: TextStyle(
-                          color: _selectedCategory == category ? Theme.of(context).colorScheme.onPrimary : null,
+                        side: BorderSide(
+                          color: isDark ? colorScheme.outlineVariant : const Color.fromRGBO(227, 230, 234, 1),
                         ),
                       ),
                     );
@@ -144,7 +159,14 @@ class _SignsLibraryPageState extends State<SignsLibraryPage> {
 
             Expanded(
               child: _filteredSigns.isEmpty 
-              ? const Center(child: Text('No signs found.')) 
+              ? Center(
+                  child: Text(
+                    'No signs found.',
+                    style: TextStyle(
+                      color: isDark ? colorScheme.onSurfaceVariant : null,
+                    ),
+                  ),
+                )
               : ListView.separated(
                 itemCount: _filteredSigns.length,
                 separatorBuilder: (context, index) {

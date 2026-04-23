@@ -23,6 +23,9 @@ class LearningModuleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () {
         if (SettingsService.cachedHaptic) {
@@ -34,9 +37,11 @@ class LearningModuleCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? colorScheme.surface : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(
+            color: isDark ? colorScheme.outlineVariant : Colors.grey.shade200,
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -59,12 +64,19 @@ class LearningModuleCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? colorScheme.onSurface : Colors.black,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                    style: TextStyle(
+                      color: isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600,
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   

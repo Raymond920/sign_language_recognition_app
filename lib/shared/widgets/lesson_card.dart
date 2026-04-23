@@ -17,6 +17,9 @@ class LessonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     IconData statusIcon;
     Color statusColor;
     Color? backgroundColor;
@@ -27,21 +30,21 @@ class LessonCard extends StatelessWidget {
     if (lesson.progress == 0){
       status = "Not Started";
       statusIcon = Icons.radio_button_unchecked;
-      statusColor = Colors.grey;
-      backgroundColor = Colors.grey[100];
-      textColor = Colors.black;
+      statusColor = isDark ? colorScheme.onSurfaceVariant : Colors.grey;
+      backgroundColor = isDark ? colorScheme.surfaceContainerHighest : Colors.grey[100];
+      textColor = isDark ? colorScheme.onSurface : Colors.black;
     } else if (lesson.progress < 1) {
       status = "In Progress";
       statusIcon = Icons.radio_button_checked;
       statusColor = Colors.indigo;
-      backgroundColor = Colors.indigo[100];
-      textColor = Colors.indigo[800];
+      backgroundColor = isDark ? const Color(0x332563EB) : Colors.indigo[100];
+      textColor = isDark ? const Color(0xFF93C5FD) : Colors.indigo[800];
     } else {
       status = "Completed";
       statusIcon = Icons.check_circle_rounded;
       statusColor = Colors.green;
-      backgroundColor = Colors.green[100];
-      textColor = Colors.green[800];
+      backgroundColor = isDark ? const Color(0x3315803D) : Colors.green[100];
+      textColor = isDark ? const Color(0xFF86EFAC) : Colors.green[800];
     }
 
     return Padding(
@@ -76,8 +79,11 @@ class LessonCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Color(0xFFE0E0E0), width: 1),
+              color: isDark ? colorScheme.surface : Colors.white,
+              border: Border.all(
+                color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                width: 1,
+              ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -102,16 +108,17 @@ class LessonCard extends StatelessWidget {
                               children: [
                                 Text(
                                   lesson.title,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
+                                    color: isDark ? colorScheme.onSurface : Colors.black,
                                   ),
                                   softWrap: true,
                                 ),
                                 Text(
                                   lesson.description,
                                   style: TextStyle(
-                                    color: Colors.grey[600],
+                                    color: isDark ? colorScheme.onSurfaceVariant : Colors.grey[600],
                                     fontSize: 14,
                                   ),
                                   softWrap: true,
@@ -121,7 +128,7 @@ class LessonCard extends StatelessWidget {
                           ),
                           Icon(
                             Icons.play_arrow_outlined,
-                            color: Colors.grey,
+                            color: isDark ? colorScheme.onSurfaceVariant : Colors.grey,
                             size: 24,
                           ),
                         ],
@@ -137,11 +144,15 @@ class LessonCard extends StatelessWidget {
                           children: [
                             Text(
                               "${lesson.signCount} signs",
-                              style: const TextStyle(color: Colors.grey),
+                              style: TextStyle(
+                                color: isDark ? colorScheme.onSurfaceVariant : Colors.grey,
+                              ),
                             ),
                             Text(
                               "${(lesson.progress * 100).toInt()}%",
-                              style: const TextStyle(color: Colors.grey),
+                              style: TextStyle(
+                                color: isDark ? colorScheme.onSurfaceVariant : Colors.grey,
+                              ),
                             ),
                           ],
                         ),
@@ -149,7 +160,7 @@ class LessonCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         LinearProgressIndicator(
                           value: lesson.progress,
-                          backgroundColor: Colors.grey[200],
+                          backgroundColor: isDark ? colorScheme.surfaceContainerHighest : Colors.grey[200],
                           color: Colors.indigoAccent,
                           minHeight: 6,
                           borderRadius: BorderRadius.circular(10),

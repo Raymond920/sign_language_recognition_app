@@ -7,7 +7,7 @@ class SettingsSwitchRow extends StatelessWidget {
   final String description;
   final bool value;
   final ValueChanged<bool> onChanged;
-  final Color activeColor;
+  final Color? activeColor;
 
   const SettingsSwitchRow({
     super.key,
@@ -15,11 +15,18 @@ class SettingsSwitchRow extends StatelessWidget {
     required this.description,
     required this.value,
     required this.onChanged,
-    this.activeColor = const Color(0xFF7B61FF), // The purple from your image
+    this.activeColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    final Color resolvedActiveColor =
+      activeColor ?? (isDark ? colorScheme.primary : const Color(0xFF7B61FF));
+    final Color inactiveTrackColor =
+      isDark ? const Color(0xFF4B5563) : Colors.grey.shade300;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -30,10 +37,10 @@ class SettingsSwitchRow extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black,
+                  color: isDark ? colorScheme.onSurface : Colors.black,
                 ),
               ),
               const SizedBox(height: 4),
@@ -41,7 +48,7 @@ class SettingsSwitchRow extends StatelessWidget {
                 description,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600,
                   height: 1.2,
                 ),
               ),
@@ -61,17 +68,17 @@ class SettingsSwitchRow extends StatelessWidget {
                 HapticFeedback.selectionClick();
               }
             },
-            activeTrackColor: activeColor,
+            activeTrackColor: resolvedActiveColor,
             activeColor: Colors.white, // Thumb color
-            inactiveTrackColor: Colors.grey[300],
+            inactiveTrackColor: inactiveTrackColor,
             inactiveThumbColor: Colors.white,
             // This removes the default Material 3 border if needed
             trackOutlineColor: WidgetStateProperty.resolveWith<Color?>(
               (Set<WidgetState> states) {
                 if (states.contains(WidgetState.selected)) {
-                  return activeColor;
+                  return resolvedActiveColor;
                 }
-                return Colors.grey[400];
+                return isDark ? colorScheme.outlineVariant : Colors.grey.shade400;
               },
             ),
           ),

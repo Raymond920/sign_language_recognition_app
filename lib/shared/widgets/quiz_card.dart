@@ -16,26 +16,29 @@ class QuizCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     // Determine badge colors based on score
     late Color badgeBackgroundColor;
     late Color badgeTextColor;
     
     if (quiz.bestScore == 0) {
       // Not started - grey
-      badgeBackgroundColor = Colors.grey[100]!;
-      badgeTextColor = Colors.grey[800]!;
+      badgeBackgroundColor = isDark ? colorScheme.surfaceContainerHighest : Colors.grey[100]!;
+      badgeTextColor = isDark ? colorScheme.onSurfaceVariant : Colors.grey[800]!;
     } else if (quiz.bestScore == 100) {
       // Perfect score - green
-      badgeBackgroundColor = Colors.green[100]!;
-      badgeTextColor = Colors.green[800]!;
+      badgeBackgroundColor = isDark ? const Color(0x3315803D) : Colors.green[100]!;
+      badgeTextColor = isDark ? const Color(0xFF86EFAC) : Colors.green[800]!;
     } else if (quiz.bestScore >= 60) {
       // Passed but not perfect - blue
-      badgeBackgroundColor = Colors.blue[100]!;
-      badgeTextColor = Colors.blue[800]!;
+      badgeBackgroundColor = isDark ? const Color(0x332563EB) : Colors.blue[100]!;
+      badgeTextColor = isDark ? const Color(0xFF93C5FD) : Colors.blue[800]!;
     } else {
       // Failed - red
-      badgeBackgroundColor = Colors.red[100]!;
-      badgeTextColor = Colors.red[800]!;
+      badgeBackgroundColor = isDark ? const Color(0x33B91C1C) : Colors.red[100]!;
+      badgeTextColor = isDark ? const Color(0xFFFCA5A5) : Colors.red[800]!;
     }
 
     return Padding(
@@ -61,8 +64,11 @@ class QuizCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+              color: isDark ? colorScheme.surface : Colors.white,
+              border: Border.all(
+                color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                width: 1,
+              ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
@@ -81,9 +87,10 @@ class QuizCard extends StatelessWidget {
                         Text(
                           quiz.title,
                           softWrap: true,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
+                            color: isDark ? colorScheme.onSurface : Colors.black,
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -91,7 +98,7 @@ class QuizCard extends StatelessWidget {
                           quiz.description,
                           softWrap: true,
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: isDark ? colorScheme.onSurfaceVariant : Colors.grey[600],
                             fontSize: 14,
                           ),
                         ),
@@ -114,6 +121,7 @@ class QuizCard extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
+                                  color: isDark ? colorScheme.onSurface : Colors.black,
                                 ),
                               )
                             ],
@@ -123,7 +131,7 @@ class QuizCard extends StatelessWidget {
                             // textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.grey[500]
+                              color: isDark ? colorScheme.onSurfaceVariant : Colors.grey[500]
                             ),
                           ),
                         ],
@@ -139,7 +147,7 @@ class QuizCard extends StatelessWidget {
                     Text(
                       "${quiz.questionCount} questions",
                       style: TextStyle(
-
+                        color: isDark ? colorScheme.onSurfaceVariant : Colors.black,
                       ),
                     ),
                     StatusBadge(

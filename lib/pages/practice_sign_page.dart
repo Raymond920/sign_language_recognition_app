@@ -104,6 +104,9 @@ class _PracticeSignPageState extends State<PracticeSignPage> with WidgetsBinding
   }
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -122,18 +125,19 @@ class _PracticeSignPageState extends State<PracticeSignPage> with WidgetsBinding
                   children: [
                     Text(
                       "Ready to Learn?",
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 24, 
-                        fontWeight: FontWeight.bold
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? colorScheme.onSurface : Colors.black,
                       ),
                     ),
                     SizedBox(height: 10,),
                     Text(
                       "Choose your learning path to improve your MSL skills",
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16, 
-                        color: Color.fromRGBO(0, 0, 0, 0.4)
+                        color: isDark ? colorScheme.onSurfaceVariant : const Color.fromRGBO(0, 0, 0, 0.4),
                       ),
                     ),
                   ],
@@ -147,13 +151,13 @@ class _PracticeSignPageState extends State<PracticeSignPage> with WidgetsBinding
                   badges: [
                     StatusBadge(
                       text: "$_lessonsAvailable Lessons Available", 
-                      backgroundColor: Color.fromRGBO(239, 239, 253, 1), 
-                      textColor: Colors.blue[900]!
+                      backgroundColor: isDark ? const Color(0x332563EB) : const Color.fromRGBO(239, 239, 253, 1), 
+                      textColor: isDark ? const Color(0xFF93C5FD) : Colors.blue[900]!
                     ),
                     StatusBadge(
                       text: "$_lessonsCompleted Completed", 
-                      backgroundColor: Color.fromRGBO(219, 252, 231, 1), 
-                      textColor: Colors.green[900]!
+                      backgroundColor: isDark ? const Color(0x3315803D) : const Color.fromRGBO(219, 252, 231, 1), 
+                      textColor: isDark ? const Color(0xFF86EFAC) : Colors.green[900]!
                     ),
                   ],
                   onTap: () => {
@@ -168,13 +172,13 @@ class _PracticeSignPageState extends State<PracticeSignPage> with WidgetsBinding
                   badges: [
                     StatusBadge(
                       text: "$_quizzesAvailable Quizzes Available", 
-                      backgroundColor: Color.fromRGBO(243, 238, 254, 1), 
-                      textColor: Colors.deepPurple[900]!
+                      backgroundColor: isDark ? const Color(0x333C2A7A) : const Color.fromRGBO(243, 238, 254, 1), 
+                      textColor: isDark ? const Color(0xFFD8B4FE) : Colors.deepPurple[900]!
                     ),
                     StatusBadge(
                       text: "Best Score: ${_bestScore.toStringAsFixed(1)}%", 
-                      backgroundColor: Color.fromRGBO(230, 247, 250, 1), 
-                      textColor: Colors.cyan[900]!
+                      backgroundColor: isDark ? const Color(0x33015566) : const Color.fromRGBO(230, 247, 250, 1), 
+                      textColor: isDark ? const Color(0xFF67E8F9) : Colors.cyan[900]!
                     ),
                   ],
                   onTap: () => {
@@ -187,20 +191,20 @@ class _PracticeSignPageState extends State<PracticeSignPage> with WidgetsBinding
                     StatItemData(
                       title: "Lessons",
                       value: _lessonsCompleted.toString(),
-                      valueColor: Color.fromRGBO(99, 102, 241, 1.0),
-                      titleColor: Color.fromRGBO(0, 0, 0, 0.5),
+                      valueColor: const Color.fromRGBO(99, 102, 241, 1.0),
+                      titleColor: isDark ? colorScheme.onSurfaceVariant : const Color.fromRGBO(0, 0, 0, 0.5),
                     ),
                     StatItemData(
                       title: "Quizzes",
                       value: _quizzesCompleted.toString(),
-                      valueColor: Color.fromRGBO(99, 102, 241, 1.0),
-                      titleColor: Color.fromRGBO(0, 0, 0, 0.5),
+                      valueColor: const Color.fromRGBO(99, 102, 241, 1.0),
+                      titleColor: isDark ? colorScheme.onSurfaceVariant : const Color.fromRGBO(0, 0, 0, 0.5),
                     ),
                     StatItemData(
                       title: "Points",
                       value: _totalPoints.toString(),
-                      valueColor: Color.fromRGBO(6, 182, 212, 1.0),
-                      titleColor: Color.fromRGBO(0, 0, 0, 0.5),
+                      valueColor: const Color.fromRGBO(6, 182, 212, 1.0),
+                      titleColor: isDark ? colorScheme.onSurfaceVariant : const Color.fromRGBO(0, 0, 0, 0.5),
                     ),
                   ],
                 )

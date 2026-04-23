@@ -12,9 +12,9 @@ class DashboardBlock extends StatelessWidget {
     this.iconColor = Colors.blue,
     this.iconSize = 28,
     this.flipIconHorizontally = false,
-    this.backgroundColor = Colors.white,
-    this.borderColor = const Color(0xFFE0E0E0),
-    this.titleColor = Colors.black,
+    this.backgroundColor,
+    this.borderColor,
+    this.titleColor,
   });
 
   final String title;
@@ -24,20 +24,28 @@ class DashboardBlock extends StatelessWidget {
   final Color? iconColor;
   final double? iconSize;
   final bool flipIconHorizontally;
-  final Color backgroundColor;
-  final Color borderColor;
-  final Color titleColor;
+  final Color? backgroundColor;
+  final Color? borderColor;
+  final Color? titleColor;
 
   bool get isClickable => onTap != null;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    final Color resolvedBackground =
+      backgroundColor ?? (isDark ? colorScheme.surface : Colors.white);
+    final Color resolvedBorder =
+      borderColor ?? (isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0));
+    final Color resolvedTitle = titleColor ?? (isDark ? colorScheme.onSurface : Colors.black);
+
     final content = Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
       decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border.all(color: borderColor, width: 1),
+        color: resolvedBackground,
+        border: Border.all(color: resolvedBorder, width: 1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -65,7 +73,7 @@ class DashboardBlock extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: titleColor,
+                  color: resolvedTitle,
                 ),
               ),
             ],

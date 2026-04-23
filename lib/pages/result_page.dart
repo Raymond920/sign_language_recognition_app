@@ -103,6 +103,9 @@ class _ResultPageState extends State<ResultPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -165,9 +168,12 @@ class _ResultPageState extends State<ResultPage> {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? colorScheme.surface : Colors.white,
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                  border: Border.all(
+                    color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                    width: 1,
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -195,11 +201,11 @@ class _ResultPageState extends State<ResultPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Your Score',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey,
+                        color: isDark ? colorScheme.onSurfaceVariant : Colors.grey,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -225,9 +231,9 @@ class _ResultPageState extends State<ResultPage> {
                         const SizedBox(height: 8),
                         Text(
                           'Score $_passingScore% or higher to pass',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey,
+                            color: isDark ? colorScheme.onSurfaceVariant : Colors.grey,
                           ),
                         ),
                       ],
@@ -248,9 +254,12 @@ class _ResultPageState extends State<ResultPage> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: isDark ? colorScheme.surface : Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                        border: Border.all(
+                          color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                          width: 1,
+                        ),
                       ),
                       child: Column(
                         children: [
@@ -262,16 +271,17 @@ class _ResultPageState extends State<ResultPage> {
                           const SizedBox(height: 8),
                           Text(
                             widget.correctScore.toString(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
+                              color: isDark ? colorScheme.onSurface : Colors.black,
                             ),
                           ),
-                          const Text(
+                          Text(
                             'Correct',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey,
+                              color: isDark ? colorScheme.onSurfaceVariant : Colors.grey,
                             ),
                           ),
                         ],
@@ -284,9 +294,12 @@ class _ResultPageState extends State<ResultPage> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: isDark ? colorScheme.surface : Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                        border: Border.all(
+                          color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                          width: 1,
+                        ),
                       ),
                       child: Column(
                         children: [
@@ -298,16 +311,17 @@ class _ResultPageState extends State<ResultPage> {
                           const SizedBox(height: 8),
                           Text(
                             widget.wrongScore.toString(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
+                              color: isDark ? colorScheme.onSurface : Colors.black,
                             ),
                           ),
-                          const Text(
+                          Text(
                             'Wrong',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey,
+                              color: isDark ? colorScheme.onSurfaceVariant : Colors.grey,
                             ),
                           ),
                         ],
@@ -325,9 +339,12 @@ class _ResultPageState extends State<ResultPage> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? colorScheme.surface : Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                  border: Border.all(
+                    color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,12 +359,12 @@ class _ResultPageState extends State<ResultPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Good Job!',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF2D2D2D),
+                              color: isDark ? colorScheme.onSurface : const Color(0xFF2D2D2D),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -355,9 +372,9 @@ class _ResultPageState extends State<ResultPage> {
                             _scorePercentage >= _passingScore
                                 ? "You're on the right track. Try reviewing the missed questions."
                                 : 'Practice makes perfect! Review the lessons and try again.',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF888888),
+                              color: isDark ? colorScheme.onSurfaceVariant : const Color(0xFF888888),
                             ),
                           ),
                         ],
@@ -404,12 +421,12 @@ class _ResultPageState extends State<ResultPage> {
                     onPressed: () {
                       Navigator.popUntil(context, (route) => route.isFirst);
                     },
-                    child: const Text(
+                    child: Text(
                       'Back to Home',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2D2D2D),
+                        color: isDark ? Colors.grey.shade200 : const Color(0xFF2D2D2D),
                       ),
                     ),
                   ),

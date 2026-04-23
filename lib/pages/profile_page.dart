@@ -226,14 +226,20 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildProfilePicture() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+          color: isDark ? colorScheme.surface : Colors.white,
+          border: Border.all(
+            color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+            width: 1,
+          ),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
@@ -248,7 +254,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   height: 150,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFE8EBFF),
+                    color: isDark ? colorScheme.surfaceContainerHighest : const Color(0xFFE8EBFF),
                     border: Border.all(
                       color: const Color(0xFF5B7FFF),
                       width: 4,
@@ -291,10 +297,10 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Tap camera icon to upload photo',
               style: TextStyle(
-                color: Color(0xFF808080),
+                color: isDark ? colorScheme.onSurfaceVariant : const Color(0xFF808080),
                 fontSize: 14,
               ),
               textAlign: TextAlign.center,
@@ -306,41 +312,61 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildAccountInfo() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+          color: isDark ? colorScheme.surface : Colors.white,
+          border: Border.all(
+            color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+            width: 1,
+          ),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               "Account Information",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? colorScheme.onSurface : Colors.black,
+              ),
             ),
             const SizedBox(height: 16),
 
             // Username
-            const Text(
+            Text(
               "Username",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark ? colorScheme.onSurface : Colors.black,
+              ),
             ),
             const SizedBox(height: 8),
             _isEditMode
                 ? Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                      color: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
+                      border: Border.all(
+                        color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                        width: 1,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TextField(
                       controller: _usernameController,
+                      style: TextStyle(
+                        color: isDark ? colorScheme.onSurface : Colors.black,
+                      ),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(vertical: 10),
@@ -350,7 +376,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 : Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
+                      color: isDark ? colorScheme.surfaceContainerHighest : const Color(0xFFF5F5F5),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -359,7 +385,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(width: 10),
                         Text(
                           _usernameController.text,
-                          style: const TextStyle(fontSize: 14, color: Color(0xFF333333)),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? colorScheme.onSurface : const Color(0xFF333333),
+                          ),
                         ),
                       ],
                     ),
@@ -367,21 +396,31 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 16),
 
             // Email
-            const Text(
+            Text(
               "Email",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark ? colorScheme.onSurface : Colors.black,
+              ),
             ),
             const SizedBox(height: 8),
             _isEditMode
                 ? Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                      color: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
+                      border: Border.all(
+                        color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                        width: 1,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TextField(
                       controller: _emailController,
+                      style: TextStyle(
+                        color: isDark ? colorScheme.onSurface : Colors.black,
+                      ),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(vertical: 10),
@@ -391,7 +430,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 : Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
+                      color: isDark ? colorScheme.surfaceContainerHighest : const Color(0xFFF5F5F5),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -401,7 +440,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         Expanded(
                           child: Text(
                             _emailController.text,
-                            style: const TextStyle(fontSize: 14, color: Color(0xFF333333)),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDark ? colorScheme.onSurface : const Color(0xFF333333),
+                            ),
                           ),
                         ),
                       ],
@@ -489,28 +531,38 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildStatsSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 18),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+          color: isDark ? colorScheme.surface : Colors.white,
+          border: Border.all(
+            color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+            width: 1,
+          ),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               "Statistics",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? colorScheme.onSurface : Colors.black,
+              ),
             ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
+                color: isDark ? colorScheme.surfaceContainerHighest : const Color(0xFFF5F5F5),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -520,12 +572,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Total Points",
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF808080),
+                          color: isDark ? colorScheme.onSurfaceVariant : const Color(0xFF808080),
                         ),
                       ),
                       const SizedBox(height: 4),

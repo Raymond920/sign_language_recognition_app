@@ -192,6 +192,9 @@ class _RecognizePageState extends State<RecognizePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -227,7 +230,12 @@ class _RecognizePageState extends State<RecognizePage> {
                             ),
                           )
                         else if (_errorMessage != null)
-                          Center(child: Text(_errorMessage!, style: TextStyle(color: Colors.red)))
+                          Center(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          )
                         else 
                           Center(child: CircularProgressIndicator()),
 
@@ -364,20 +372,51 @@ class _RecognizePageState extends State<RecognizePage> {
                     padding: EdgeInsets.all(24),
                     // padding: EdgeInsets.fromLTRB(0, 24, 0, 24),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? colorScheme.surface : Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                      border: Border.all(
+                        color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.05 : 0.12),
+                          blurRadius: 4,
+                        )
+                      ],
                     ),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         if (prediction.isNotEmpty)
                           if (prediction[0].length <= 7)
-                            Text(prediction[0], style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold))
+                            Text(
+                              prediction[0],
+                              style: TextStyle(
+                                fontSize: 38,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? colorScheme.onSurface : Colors.black,
+                              ),
+                            )
                           else
-                            Text(prediction[0], style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))
+                            Text(
+                              prediction[0],
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? colorScheme.onSurface : Colors.black,
+                              ),
+                            )
                         else
-                          Text("Detecting...", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                        Spacer(),
+                          Text(
+                            "Detecting...",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? colorScheme.onSurface : Colors.black,
+                            ),
+                          ),
+                        const SizedBox(height: 12),
                         
                         if (prediction.length > 1)
                           Row(
@@ -385,11 +424,24 @@ class _RecognizePageState extends State<RecognizePage> {
                             children: [
                               Container(
                                 padding: EdgeInsets.symmetric(horizontal: 6),
-                                decoration: BoxDecoration(color: Colors.green[100], borderRadius: BorderRadius.circular(4)),
-                                child: Text("Correct", style: TextStyle(color: Colors.green)),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0x3315803D) : Colors.green[100],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  "Correct",
+                                  style: TextStyle(
+                                    color: isDark ? const Color(0xFF86EFAC) : Colors.green,
+                                  ),
+                                ),
                               ),
                               SizedBox(width: 10),
-                              Text("${prediction[1]}% Accurate", style: TextStyle(color: Colors.grey))
+                              Text(
+                                "${prediction[1]}% Accurate",
+                                style: TextStyle(
+                                  color: isDark ? colorScheme.onSurfaceVariant : Colors.grey,
+                                ),
+                              )
                             ],
                           )
                       ],
@@ -406,9 +458,18 @@ class _RecognizePageState extends State<RecognizePage> {
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? colorScheme.surface : Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                      border: Border.all(
+                        color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.05 : 0.12),
+                          blurRadius: 4,
+                        ),
+                      ],
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -421,14 +482,19 @@ class _RecognizePageState extends State<RecognizePage> {
                                 readOnly: true,
                                 showCursor: true,
                                 decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: isDark ? colorScheme.surface : Colors.white,
                                   border: InputBorder.none,
                                   hintText: 'Spell something...',
                                   hintStyle: TextStyle(
-                                    color: Color.fromRGBO(0, 0, 0, 0.4)
+                                    color: isDark
+                                        ? colorScheme.onSurfaceVariant
+                                        : const Color.fromRGBO(0, 0, 0, 0.4)
                                   )
                                 ),
                                 style: TextStyle(
-                                  fontSize: 14
+                                  fontSize: 14,
+                                  color: isDark ? colorScheme.onSurface : Colors.black,
                                 ),
                               ),
                             ),
@@ -460,8 +526,8 @@ class _RecognizePageState extends State<RecognizePage> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  backgroundColor: Colors.white,
-                                  iconColor: Colors.black,
+                                  backgroundColor: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
+                                  iconColor: isDark ? colorScheme.onSurface : Colors.black,
                                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                                 ),
                                 child: FittedBox(
@@ -469,12 +535,17 @@ class _RecognizePageState extends State<RecognizePage> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.space_bar, color: Colors.black),
+                                      Icon(
+                                        Icons.space_bar,
+                                        color: isDark ? colorScheme.onSurface : Colors.black,
+                                      ),
                                       SizedBox(width: 4),
                                       Text(
                                         "Space",
                                         textAlign: TextAlign.right,
-                                        style: TextStyle(color: Colors.black),
+                                        style: TextStyle(
+                                          color: isDark ? colorScheme.onSurface : Colors.black,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -507,8 +578,8 @@ class _RecognizePageState extends State<RecognizePage> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  backgroundColor: Colors.white,
-                                  iconColor: Colors.black,
+                                  backgroundColor: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
+                                  iconColor: isDark ? colorScheme.onSurface : Colors.black,
                                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                                 ),
                                 child: FittedBox(
@@ -516,12 +587,17 @@ class _RecognizePageState extends State<RecognizePage> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.backspace_outlined, color: Colors.black),
+                                      Icon(
+                                        Icons.backspace_outlined,
+                                        color: isDark ? colorScheme.onSurface : Colors.black,
+                                      ),
                                       SizedBox(width: 4),
                                       Text(
                                         "Delete",
                                         textAlign: TextAlign.right,
-                                        style: TextStyle(color: Colors.black),
+                                        style: TextStyle(
+                                          color: isDark ? colorScheme.onSurface : Colors.black,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -541,8 +617,8 @@ class _RecognizePageState extends State<RecognizePage> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  backgroundColor: Colors.white,
-                                  iconColor: Colors.black,
+                                  backgroundColor: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
+                                  iconColor: isDark ? colorScheme.onSurface : Colors.black,
                                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                                 ),
                                 child: FittedBox(
@@ -550,12 +626,17 @@ class _RecognizePageState extends State<RecognizePage> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.replay, color: Colors.black),
+                                      Icon(
+                                        Icons.replay,
+                                        color: isDark ? colorScheme.onSurface : Colors.black,
+                                      ),
                                       SizedBox(width: 4),
                                       Text(
                                         "Clear",
                                         textAlign: TextAlign.right,
-                                        style: TextStyle(color: Colors.black),
+                                        style: TextStyle(
+                                          color: isDark ? colorScheme.onSurface : Colors.black,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -603,14 +684,16 @@ class _RecognizePageState extends State<RecognizePage> {
                       if (states.contains(WidgetState.selected)) {
                         return const Color.fromRGBO(99, 102, 241, 1);
                       }
-                      return const Color.fromRGBO(236, 236, 240, 1);
+                      return isDark
+                          ? colorScheme.surfaceContainerHighest
+                          : const Color.fromRGBO(236, 236, 240, 1);
                     }),
                     foregroundColor:
                         WidgetStateProperty.resolveWith<Color>((states) {
                       if (states.contains(WidgetState.selected)) {
                         return Colors.white;
                       }
-                      return Colors.black;
+                      return isDark ? colorScheme.onSurface : Colors.black;
                     }),
                     shape: WidgetStateProperty.all(
                       RoundedRectangleBorder(
@@ -633,6 +716,7 @@ class _RecognizePageState extends State<RecognizePage> {
                     "Text-to-Speech",
                     style: TextStyle(
                       fontSize: 16,
+                      color: isDark ? colorScheme.onSurface : Colors.black,
                     ),
                   ),
                   Spacer(),
@@ -640,7 +724,9 @@ class _RecognizePageState extends State<RecognizePage> {
                     height: 40,
                     width: 45,
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black26), 
+                      border: Border.all(
+                        color: isDark ? colorScheme.outlineVariant : Colors.black26,
+                      ), 
                       borderRadius: BorderRadius.circular(8), 
                     ),
                     child: Material(
@@ -660,7 +746,9 @@ class _RecognizePageState extends State<RecognizePage> {
                         child: Icon(
                           _enableTextToSpeech ? Icons.volume_up_outlined : Icons.volume_off_outlined,
                           size: 20, 
-                          color: _enableTextToSpeech ? Color.fromRGBO(99, 102, 241, 1) : Colors.black54,
+                          color: _enableTextToSpeech
+                              ? const Color.fromRGBO(99, 102, 241, 1)
+                              : (isDark ? colorScheme.onSurfaceVariant : Colors.black54),
                         ),
                       ),
                     ),

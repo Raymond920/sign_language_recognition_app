@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sign_language_recognition_app/shared/theme/app_theme.dart';
 
 final ValueNotifier<String?> achievementBannerMessage =
     ValueNotifier<String?>(null);
@@ -98,23 +99,40 @@ class _AchievementBannerState extends State<_AchievementBanner>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    final appUiColors = Theme.of(context).extension<AppUiColors>();
+
+    final Color bannerBackground = isDark
+        ? (appUiColors?.sidebarBackground ?? colorScheme.surface)
+        : Colors.white;
+    final Color bannerTextColor = isDark
+        ? (appUiColors?.sidebarForeground ?? colorScheme.onSurface)
+        : Colors.black;
+    final Color closeIconColor = isDark
+        ? colorScheme.onSurfaceVariant
+        : Colors.blueGrey;
+    final Color trophyColor = isDark
+        ? (appUiColors?.achievementYellowText ?? Colors.amber)
+        : Colors.amber;
+
     return SlideTransition(
       position: _animation,
       child: Material(
         elevation: 10,
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
+        color: bannerBackground,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(Icons.workspace_premium, color: Colors.amber),
+              Icon(Icons.workspace_premium, color: trophyColor),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   widget.message,
-                  style: const TextStyle(color: Colors.black),
+                  style: TextStyle(color: bannerTextColor),
                 ),
               ),
               const SizedBox(width: 8),
@@ -124,7 +142,7 @@ class _AchievementBannerState extends State<_AchievementBanner>
                     achievementBannerMessage.value = null;
                   }
                 },
-                icon: const Icon(Icons.close, color: Colors.blueGrey),
+                icon: Icon(Icons.close, color: closeIconColor),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 splashRadius: 18,

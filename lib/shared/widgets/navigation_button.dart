@@ -51,8 +51,11 @@ class _NavigationButtonState extends State<NavigationButton> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Material(
-      color: Colors.white,
+      color: isDark ? colorScheme.surface : Colors.white,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -64,7 +67,7 @@ class _NavigationButtonState extends State<NavigationButton> {
             width: double.infinity,
             decoration: BoxDecoration(
               border: Border.all(
-                color: const Color(0xFFE0E0E0),
+                color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
                 width: 1,
               ),
               borderRadius: BorderRadius.circular(12),
@@ -90,6 +93,7 @@ class _NavigationButtonState extends State<NavigationButton> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
+                    color: isDark ? colorScheme.onSurface : Colors.black,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -98,7 +102,7 @@ class _NavigationButtonState extends State<NavigationButton> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Color.fromRGBO(0, 0, 0, 0.4),
+                    color: isDark ? colorScheme.onSurfaceVariant : const Color.fromRGBO(0, 0, 0, 0.4),
                   ),
                 )
                 

@@ -287,12 +287,18 @@ class _QuizContentPageState extends State<QuizContentPage> {
   }
 
   Widget _buildQuestionCard(String title, String imagePath) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+        color: isDark ? colorScheme.surface : Colors.white,
+        border: Border.all(
+          color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+          width: 1,
+        ),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -317,12 +323,19 @@ class _QuizContentPageState extends State<QuizContentPage> {
   }
 
   Widget _buildAnswerOptions(QuizQuestion question){
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           "Choose the correct answer: ",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: isDark ? colorScheme.onSurface : Colors.black,
+          ),
         ),
         const SizedBox(height: 12),
         GridView.count(
@@ -335,7 +348,7 @@ class _QuizContentPageState extends State<QuizContentPage> {
           children: List.generate(question.options.length, (index) {
             final optionText = question.options[index];
 
-            Color borderColor = Colors.grey.shade300;
+            Color borderColor = isDark ? colorScheme.outlineVariant : Colors.grey.shade300;
 
             if (selectedAnswer != null || _canProceedToNext) {
               if (optionText == question.answer) {
@@ -365,11 +378,14 @@ class _QuizContentPageState extends State<QuizContentPage> {
                 decoration: BoxDecoration(
                   border: Border.all(color: borderColor, width: 3),
                   borderRadius: BorderRadius.circular(12),
-                  color: Colors.white
+                  color: isDark ? colorScheme.surface : Colors.white,
                 ),
                 child: Text(
                   optionText,
-                  style: const TextStyle(fontSize: 16),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? colorScheme.onSurface : Colors.black,
+                  ),
                 ),
               ),
             );
@@ -380,16 +396,21 @@ class _QuizContentPageState extends State<QuizContentPage> {
   }
 
   Widget _buildSignRecognition() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     final question = questions[currentQuestionIndex];
     
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? colorScheme.surface : Colors.white,
         borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(isDark ? 0.05 : 0.1),
             blurRadius: 8,
             offset: Offset(0, 2),
           )
@@ -404,7 +425,7 @@ class _QuizContentPageState extends State<QuizContentPage> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Color(0xff3D3D44),
+              color: isDark ? colorScheme.onSurface : const Color(0xff3D3D44),
             ),
           ),
           SizedBox(height: 15),
@@ -473,8 +494,8 @@ class _QuizContentPageState extends State<QuizContentPage> {
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: _confirmedDetectedSign == question.answer
-                                ? Color(0xFF2D5016)
-                                : Color(0xFF8B0000),
+                                ? const Color(0xFF2D5016)
+                                : const Color(0xFF8B0000),
                           ),
                         ),
                         SizedBox(height: 8),
@@ -484,8 +505,8 @@ class _QuizContentPageState extends State<QuizContentPage> {
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                             color: _confirmedDetectedSign == question.answer
-                                ? Color(0xFF2D5016)
-                                : Color(0xFF8B0000),
+                                ? const Color(0xFF2D5016)
+                                : const Color(0xFF8B0000),
                           ),
                         ),
                       ],
@@ -580,8 +601,8 @@ class _QuizContentPageState extends State<QuizContentPage> {
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: _confirmedDetectedSign == question.answer
-                          ? Color(0xFF2D5016)
-                          : Color(0xFF8B0000),
+                          ? (isDark ? const Color(0xFF86EFAC) : const Color(0xFF2D5016))
+                          : (isDark ? const Color(0xFFFCA5A5) : const Color(0xFF8B0000)),
                     ),
                   ),
                 ],
@@ -594,6 +615,9 @@ class _QuizContentPageState extends State<QuizContentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: const Text('Loading Quiz...')),
@@ -670,7 +694,7 @@ class _QuizContentPageState extends State<QuizContentPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: LinearProgressIndicator(
                   value: (currentQuestionIndex + 1) / questions.length,
-                  backgroundColor: Colors.indigo[100],
+                  backgroundColor: isDark ? colorScheme.surfaceContainerHighest : Colors.indigo[100],
                   color: Colors.indigoAccent,
                   minHeight: 8,
                   borderRadius: BorderRadius.circular(12),

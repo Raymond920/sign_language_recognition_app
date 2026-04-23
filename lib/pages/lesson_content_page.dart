@@ -262,6 +262,9 @@ class _LessonContentPageState extends State<LessonContentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     // Show loading indicator while fetching lesson data from database
     if (_isLoading || signs.isEmpty) {
       return Scaffold(
@@ -308,7 +311,7 @@ class _LessonContentPageState extends State<LessonContentPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: LinearProgressIndicator(
                   value: (currentIndex + 1) / totalSteps,
-                  backgroundColor: Colors.indigo[100],
+                  backgroundColor: isDark ? colorScheme.surfaceContainerHighest : Colors.indigo[100],
                   color: Colors.indigoAccent,
                   minHeight: 8,
                   borderRadius: BorderRadius.circular(12),
@@ -345,7 +348,11 @@ class _LessonContentPageState extends State<LessonContentPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text("Learning: ${sign.name}", 
-               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+               style: TextStyle(
+                 fontSize: 20,
+                 fontWeight: FontWeight.bold,
+                 color: Theme.of(context).colorScheme.onSurface,
+               )),
           const SizedBox(height: 20),
           Center(
             child: Container(
@@ -358,12 +365,25 @@ class _LessonContentPageState extends State<LessonContentPage> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text("How to sign:", style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            "How to sign:",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
           const SizedBox(height: 8),
           // Using our split logic for bullet points
           ...sign.instructions.map((text) => Padding(
             padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Text("• $text", style: const TextStyle(color: Colors.blueGrey)),
+            child: Text(
+              "• $text",
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Theme.of(context).colorScheme.onSurfaceVariant
+                    : Colors.blueGrey,
+              ),
+            ),
           )),
         ],
       ),
@@ -371,10 +391,13 @@ class _LessonContentPageState extends State<LessonContentPage> {
   }
 
   BoxDecoration _cardDecoration() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return BoxDecoration(
-      color: Colors.white,
+      color: isDark ? colorScheme.surface : Colors.white,
       borderRadius: BorderRadius.circular(15),
-      border: Border.all(color: const Color(0xFFE0E0E0)),
+      border: Border.all(color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0)),
     );
   }
   
@@ -385,9 +408,15 @@ class _LessonContentPageState extends State<LessonContentPage> {
       decoration: _cardDecoration(),
       child: Column(
         children: [
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
-            child: Text("Practice Time", style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(
+              "Practice Time",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
           ),
           const SizedBox(height: 15),
           // Live Camera with hand detection
@@ -517,9 +546,15 @@ class _LessonContentPageState extends State<LessonContentPage> {
               height: 150,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.green[50],
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0x3315803D)
+                    : Colors.green[50],
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.green[200]!),
+                border: Border.all(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF15803D)
+                      : Colors.green[200]!,
+                ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -530,7 +565,9 @@ class _LessonContentPageState extends State<LessonContentPage> {
                     "Great job!",
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.green[800],
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF86EFAC)
+                          : Colors.green[800],
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -538,7 +575,9 @@ class _LessonContentPageState extends State<LessonContentPage> {
                     "Your sign matches perfectly",
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.green[800],
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF86EFAC)
+                          : Colors.green[800],
                       fontWeight: FontWeight.normal,
                     ),
                   ),
@@ -551,9 +590,12 @@ class _LessonContentPageState extends State<LessonContentPage> {
   }
   
   Widget _buildBottomNav(int totalSteps) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(20),
-      color: Colors.white,
+      color: isDark ? colorScheme.surface : Colors.white,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

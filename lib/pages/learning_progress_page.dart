@@ -122,6 +122,9 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -142,10 +145,11 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
                     SizedBox(height: 20),
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           "Course Completion",
                           style: TextStyle(
                             fontSize: 16,
+                            color: isDark ? colorScheme.onSurface : Colors.black,
                           ),
                         ),
                         const Spacer(),
@@ -153,6 +157,7 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
                           "${(_totalLessons + _totalQuizzes > 0 ? ((_lessonsCompleted + _quizzesCompleted) / (_totalLessons + _totalQuizzes) * 100) : 0).toStringAsFixed(2)}%",
                           style: TextStyle(
                             fontSize: 16,
+                            color: isDark ? colorScheme.onSurface : Colors.black,
                           ),
                         ),
                       ],
@@ -163,8 +168,8 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
                       child: LinearProgressIndicator(
                         value: _totalLessons + _totalQuizzes > 0 ? (_lessonsCompleted + _quizzesCompleted) / (_totalLessons + _totalQuizzes) : 0,
                         minHeight: 14.0,
-                        backgroundColor: Color.fromRGBO(99, 102, 241, 0.2),
-                        color: Color.fromRGBO(99, 102, 241, 1.0),
+                        backgroundColor: isDark ? colorScheme.surfaceContainerHighest : const Color.fromRGBO(99, 102, 241, 0.2),
+                        color: const Color.fromRGBO(99, 102, 241, 1.0),
                       ),
                     ),
                     SizedBox(height: 25.0),
@@ -188,7 +193,7 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
                                 _lessonsCompleted.toString(),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Color.fromRGBO(99, 102, 241, 1.0),
+                                  color: const Color.fromRGBO(99, 102, 241, 1.0),
                                   fontWeight: FontWeight.w500,
                                   fontSize: 26,
                                 ),
@@ -197,7 +202,7 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
                                 "Lessons Done",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Color.fromRGBO(0, 0, 0, 0.5),
+                                  color: isDark ? colorScheme.onSurfaceVariant : const Color.fromRGBO(0, 0, 0, 0.5),
                                   fontSize: 16,
                                 ),
                               ),
@@ -215,7 +220,7 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
                                 _quizzesCompleted.toString(),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Color.fromRGBO(99, 102, 241, 1.0),
+                                  color: const Color.fromRGBO(99, 102, 241, 1.0),
                                   fontWeight: FontWeight.w500,
                                   fontSize: 26,
                                 ),
@@ -224,7 +229,7 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
                                 "Quizzes Passed",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Color.fromRGBO(0, 0, 0, 0.5),
+                                  color: isDark ? colorScheme.onSurfaceVariant : const Color.fromRGBO(0, 0, 0, 0.5),
                                   fontSize: 16,
                                 ),
                               ),
@@ -242,7 +247,7 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
                                 _totalPoints.toString(),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Color.fromRGBO(6, 182, 212, 1.0),
+                                  color: const Color.fromRGBO(6, 182, 212, 1.0),
                                   fontWeight: FontWeight.w500,
                                   fontSize: 26,
                                 ),
@@ -251,7 +256,7 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
                                 "Points Earned",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Color.fromRGBO(0, 0, 0, 0.5),
+                                  color: isDark ? colorScheme.onSurfaceVariant : const Color.fromRGBO(0, 0, 0, 0.5),
                                   fontSize: 16,
                                 ),
                               ),

@@ -16,11 +16,22 @@ class AchievementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     // 1. Define colors based on the state
-    final Color backgroundColor = isEarned ? const Color(0xFFFFFBEB) : const Color(0xFFF9FAFB);
-    final Color borderColor = isEarned ? const Color(0xFFFEF3C7) : const Color(0xFFF3F4F6);
-    final Color textColor = isEarned ? const Color(0xFF92400E) : Colors.grey.shade600;
-    final Color titleColor = isEarned ? const Color(0xFF92400E) : Colors.grey.shade700;
+    final Color backgroundColor = isEarned
+      ? (isDark ? const Color(0x33A16207) : const Color(0xFFFFFBEB))
+      : (isDark ? colorScheme.surfaceContainerHighest : const Color(0xFFF9FAFB));
+    final Color borderColor = isEarned
+      ? (isDark ? const Color(0xFFA16207) : const Color(0xFFFEF3C7))
+      : (isDark ? colorScheme.outlineVariant : const Color(0xFFF3F4F6));
+    final Color textColor = isEarned
+      ? (isDark ? const Color(0xFFFACC15) : const Color(0xFF92400E))
+      : (isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600);
+    final Color titleColor = isEarned
+      ? (isDark ? const Color(0xFFFACC15) : const Color(0xFF92400E))
+      : (isDark ? colorScheme.onSurface : Colors.grey.shade700);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -76,21 +87,27 @@ class AchievementCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF9C3),
+                color: isDark ? const Color(0x335A3D00) : const Color(0xFFFEF9C3),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFFFDE68A)),
+                border: Border.all(
+                  color: isDark ? const Color(0xFFA16207) : const Color(0xFFFDE68A),
+                ),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.workspace_premium, size: 14, color: Color(0xDDB45309)),
+                  Icon(
+                    Icons.workspace_premium,
+                    size: 14,
+                    color: isDark ? const Color(0xFFFACC15) : const Color(0xDDB45309),
+                  ),
                   SizedBox(width: 4),
                   Text(
                     "Earned",
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFFB45309)
+                      color: isDark ? const Color(0xFFFACC15) : const Color(0xFFB45309),
                     ),
                   )
                 ],

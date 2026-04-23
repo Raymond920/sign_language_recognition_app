@@ -225,12 +225,18 @@ class _SignDetailPageState extends State<SignDetailPage> {
   }
 
   Widget _buildReferenceImage(String imagePath){
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+        color: isDark ? colorScheme.surface : Colors.white,
+        border: Border.all(
+          color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+          width: 1,
+        ),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -255,12 +261,18 @@ class _SignDetailPageState extends State<SignDetailPage> {
   }
 
   Widget _buildInstructionCard(List<String> instructions){
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+        color: isDark ? colorScheme.surface : Colors.white,
+        border: Border.all(
+          color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+          width: 1,
+        ),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -295,7 +307,15 @@ class _SignDetailPageState extends State<SignDetailPage> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(text, softWrap: true,)),
+                  Expanded(
+                    child: Text(
+                      text,
+                      softWrap: true,
+                      style: TextStyle(
+                        color: isDark ? colorScheme.onSurface : Colors.black,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -307,6 +327,8 @@ class _SignDetailPageState extends State<SignDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     final hasVideoId = widget.sign.videoId.trim().isNotEmpty;
 
     return Scaffold(
@@ -322,8 +344,11 @@ class _SignDetailPageState extends State<SignDetailPage> {
               width: double.infinity,
               padding: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                color: isDark ? colorScheme.surface : Colors.white,
+                border: Border.all(
+                  color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                  width: 1,
+                ),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(

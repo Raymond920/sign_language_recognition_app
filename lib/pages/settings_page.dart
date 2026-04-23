@@ -160,6 +160,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator(),),);
     }
@@ -167,7 +170,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text("Settings"),
+        title: const Text("Settings"),
       ),
       body: SingleChildScrollView(
         child: Center(
@@ -199,12 +202,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               "Voice Selection",
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -225,7 +228,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                           Text(
                                             voice,
                                             style: TextStyle(
-                                              color: Colors.black87,
+                                              color: colorScheme.onSurface,
                                               fontSize: 16,
                                               fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
                                             ),
@@ -245,8 +248,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                 buttonStyleData: ButtonStyleData(
                                   padding: const EdgeInsets.only(right: 8),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF8F9FA),
-                                    border: Border.all(color: const Color(0xFFDEE2E6)),
+                                    color: colorScheme.surfaceContainerHighest,
+                                    border: Border.all(color: colorScheme.outlineVariant),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
@@ -254,7 +257,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 dropdownStyleData: DropdownStyleData(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
-                                    color: Colors.white,
+                                    color: colorScheme.surface,
                                   ),
                                   offset: const Offset(0, -4), // Adjusts position so it doesn't overlap
                                   elevation: 4,
@@ -264,7 +267,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                   padding: EdgeInsets.zero, 
                                 ),
                                 iconStyleData: const IconStyleData(
-                                  icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                                  icon: Icon(Icons.keyboard_arrow_down),
                                 ),
                               ),
                             ),
@@ -361,7 +364,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     icon: Icons.warning_amber_rounded,
                     iconColor: Colors.red,
                     borderColor: Colors.red,
-                    backgroundColor: Color(0xFFFFEBEE),
+                    backgroundColor: colorScheme.errorContainer.withAlpha(120),
                     child: Column(
                       children: [
                         SizedBox(height: 10),
@@ -372,7 +375,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             textAlign: TextAlign.justify,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -429,8 +432,11 @@ class _SettingsPageState extends State<SettingsPage> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Color(0xFFE0E0E0), width: 1),
+                          color: isDark ? colorScheme.surface : Colors.white,
+                          border: Border.all(
+                            color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+                            width: 1,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Column(
@@ -444,7 +450,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: isDark ? colorScheme.onSurface : Colors.black,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -453,7 +459,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[600],
+                                color: isDark ? colorScheme.onSurfaceVariant : Colors.grey[600],
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -462,7 +468,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: isDark ? colorScheme.onSurfaceVariant : Colors.grey[600],
                               ),
                             ),
                       

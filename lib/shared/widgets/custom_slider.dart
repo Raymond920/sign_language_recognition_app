@@ -56,7 +56,7 @@ class CustomeSlider extends StatelessWidget {
   final String Function(double) getCurrentLabel;
   final double min;
   final double max;
-  final Color activeColor;
+  final Color? activeColor;
   final String title;
 
   const CustomeSlider({
@@ -68,11 +68,19 @@ class CustomeSlider extends StatelessWidget {
     required this.title,
     this.min = 0.0,
     this.max = 1.0,
-    this.activeColor = const Color(0xFF7B61FF), // The purple from your image
+    this.activeColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    final Color resolvedActiveColor =
+      activeColor ?? (isDark ? colorScheme.primary : const Color(0xFF7B61FF));
+    final Color resolvedInactiveColor =
+      isDark ? colorScheme.surfaceContainerHighest : const Color(0xFFF0F0F0);
+    final Color footerTextColor = isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade500;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,7 +94,7 @@ class CustomeSlider extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: isDark ? colorScheme.onSurface : Colors.black87,
               ),
             ),
             Text(
@@ -94,7 +102,7 @@ class CustomeSlider extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
+                color: isDark ? colorScheme.onSurfaceVariant : Colors.grey.shade600,
               ),
             ),
           ],
@@ -105,8 +113,8 @@ class CustomeSlider extends StatelessWidget {
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             trackHeight: 12, // Thick "Pill" style
-            activeTrackColor: activeColor,
-            inactiveTrackColor: const Color(0xFFF0F0F0),
+            activeTrackColor: resolvedActiveColor,
+            inactiveTrackColor: resolvedInactiveColor,
             thumbColor: Colors.white,
             // Shift the thumb slightly left for visual alignment.
             thumbShape: const OffsetRoundSliderThumbShape(
@@ -115,7 +123,7 @@ class CustomeSlider extends StatelessWidget {
               pressedElevation: 5,
               xOffset: -2,
             ),
-            overlayColor: activeColor.withAlpha(32),
+            overlayColor: resolvedActiveColor.withAlpha(32),
             // Makes the corners perfectly rounded
             trackShape: const RoundedRectSliderTrackShape(),
           ),
@@ -140,8 +148,8 @@ class CustomeSlider extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildFooterText("Slow"),
-              _buildFooterText("Fast"),
+              _buildFooterText("Slow", footerTextColor),
+              _buildFooterText("Fast", footerTextColor),
             ],
           ),
         ),
@@ -149,12 +157,12 @@ class CustomeSlider extends StatelessWidget {
     );
   }
 
-  Widget _buildFooterText(String text) {
+  Widget _buildFooterText(String text, Color color) {
     return Text(
       text,
       style: TextStyle(
         fontSize: 12,
-        color: Colors.grey[500],
+        color: color,
         fontWeight: FontWeight.w400,
       ),
     );

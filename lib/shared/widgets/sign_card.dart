@@ -14,6 +14,9 @@ class SignCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return InkWell(
       borderRadius: BorderRadius.circular(10),
       onTap: () {
@@ -26,8 +29,11 @@ class SignCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+          color: isDark ? colorScheme.surface : Colors.white,
+          border: Border.all(
+            color: isDark ? colorScheme.outlineVariant : const Color(0xFFE0E0E0),
+            width: 1,
+          ),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -41,18 +47,19 @@ class SignCard extends StatelessWidget {
                   sign.name,
                   style: TextStyle(
                     fontSize: 16,
+                    color: isDark ? colorScheme.onSurface : Colors.black,
                   ),
                 ),
                 SizedBox(
                   height: 5,
                 ),
-                _buildCategoryBadge(sign.category)
+                _buildCategoryBadge(context, sign.category)
               ],
             ),
 
             Icon(
               Icons.arrow_forward_ios,
-              color: Colors.grey,
+              color: isDark ? colorScheme.onSurfaceVariant : Colors.grey,
               size: 20,
             ),
           ]
@@ -61,22 +68,26 @@ class SignCard extends StatelessWidget {
     );
   }
   
-  Widget _buildCategoryBadge(String category) {
+  Widget _buildCategoryBadge(BuildContext context, String category) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: const Color.fromRGBO(227, 230, 234, 1),
+          color: isDark ? colorScheme.outlineVariant : const Color.fromRGBO(227, 230, 234, 1),
           width: 1,
         ),
       ),
       child: Text(
         category,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           height: 1.0,
+          color: isDark ? colorScheme.onSurfaceVariant : Colors.black,
         ),
       ),
     );
