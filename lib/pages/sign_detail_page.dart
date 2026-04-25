@@ -363,10 +363,11 @@ class _SignDetailPageState extends State<SignDetailPage> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(16),
-                            topRight: Radius.circular(16),
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
                           ),
                           child: YoutubePlayer(
+                            aspectRatio: 4/3,
                             controller: _controller,
                             showVideoProgressIndicator: true,
                             progressIndicatorColor: Colors.blueAccent,
