@@ -47,18 +47,34 @@ class HandRecognitionService {
 
   Future<void> initialize() async {
     try {
+      print('📷 [HAND_RECOGNITION] initialize() called');
+      final startTime = DateTime.now();
+      
+      print('📷 [HAND_RECOGNITION] Fetching available cameras...');
+      final camerasStart = DateTime.now();
       final cameras = await availableCameras();
+      final camerasFetchDuration = DateTime.now().difference(camerasStart);
+      print('📷 [HAND_RECOGNITION] Got cameras in ${camerasFetchDuration.inMilliseconds}ms. Found ${cameras.length} cameras');
 
+      print('📷 [HAND_RECOGNITION] Finding front and back cameras...');
       _frontCamera = cameras.firstWhere(
         (camera) => camera.lensDirection == CameraLensDirection.front,
       );
-
       _backCamera = cameras.firstWhere(
         (camera) => camera.lensDirection == CameraLensDirection.back,
       );
+      print('📷 [HAND_RECOGNITION] Found front and back cameras');
 
+      print('📷 [HAND_RECOGNITION] Initializing hand detection service...');
+      final handDetStart = DateTime.now();
       _handDetectionService.init();
+      final handDetDuration = DateTime.now().difference(handDetStart);
+      print('📷 [HAND_RECOGNITION] Hand detection service initialized in ${handDetDuration.inMilliseconds}ms');
+      
+      final totalDuration = DateTime.now().difference(startTime);
+      print('📷 [HAND_RECOGNITION] ✅ Initialization completed in ${totalDuration.inMilliseconds}ms');
     } catch (e) {
+      print('❌ [HAND_RECOGNITION] Error: $e');
       _predictionController.addError('Failed to initialize cameras: $e');
     }
   }
@@ -66,21 +82,41 @@ class HandRecognitionService {
   /// Start camera stream and hand detection
   Future<void> startCamera() async {
     try {
+      print('📷 [HAND_RECOGNITION] startCamera() called');
+      final startTime = DateTime.now();
+      
       if (_cameraController != null) {
+        print('📷 [HAND_RECOGNITION] Disposing old camera controller...');
+        final disposeStart = DateTime.now();
         await _cameraController!.dispose();
+        final disposeDuration = DateTime.now().difference(disposeStart);
+        print('📷 [HAND_RECOGNITION] Old camera disposed in ${disposeDuration.inMilliseconds}ms');
       }
 
+      print('📷 [HAND_RECOGNITION] Creating camera controller (${_isFrontCamera ? 'front' : 'back'} camera)...');
       _cameraController = CameraController(
         _isFrontCamera ? _frontCamera! : _backCamera!,
         ResolutionPreset.medium,
         enableAudio: false,
       );
 
+      print('📷 [HAND_RECOGNITION] Initializing camera controller...');
+      final initStart = DateTime.now();
       await _cameraController!.initialize();
+      final initDuration = DateTime.now().difference(initStart);
+      print('📷 [HAND_RECOGNITION] Camera controller initialized in ${initDuration.inMilliseconds}ms');
       _isCameraInitialized = true;
 
+      print('📷 [HAND_RECOGNITION] Starting image stream...');
+      final streamStart = DateTime.now();
       await _cameraController!.startImageStream(_processCameraImage);
+      final streamDuration = DateTime.now().difference(streamStart);
+      print('📷 [HAND_RECOGNITION] Image stream started in ${streamDuration.inMilliseconds}ms');
+      
+      final totalDuration = DateTime.now().difference(startTime);
+      print('📷 [HAND_RECOGNITION] ✅ startCamera() completed in ${totalDuration.inMilliseconds}ms');
     } catch (e) {
+      print('❌ [HAND_RECOGNITION] Error in startCamera: $e');
       _predictionController.addError('Failed to start camera: $e');
     }
   }
@@ -305,5 +341,18 @@ class HandRecognitionService {
     await _cameraController?.dispose();
     _handDetectionService.dispose();
     await _predictionController.close();
+  }
+
+  /// Cleanup camera only (for use when service is reused via singleton)
+  /// This stops the camera but doesn't dispose the service (which may be reused)
+  Future<void> stopCameraOnly() async {
+    print('📷 [HAND_RECOGNITION] Stopping camera only (keeping service for reuse)...');
+    try {
+      await stopCamera();
+      await _cameraController?.dispose();
+      print('📷 [HAND_RECOGNITION] ✅ Camera stopped');
+    } catch (e) {
+      print('❌ [HAND_RECOGNITION] Error stopping camera: $e');
+    }
   }
 }

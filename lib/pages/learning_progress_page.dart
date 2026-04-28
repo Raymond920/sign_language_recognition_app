@@ -130,11 +130,14 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text("My Progress"),
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: <Widget> [
+      body: Scrollbar(
+        thickness: 8,
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget> [
               const SizedBox(height: 20),
               DashboardBlock(
                 title: 'Overall Progress', 
@@ -367,6 +370,7 @@ class _LearningProgressPageState extends State<LearningProgressPage> with Widget
               // const SizedBox(height: 20),
             ],
           ),
+        ),
         ),
       ),
     );

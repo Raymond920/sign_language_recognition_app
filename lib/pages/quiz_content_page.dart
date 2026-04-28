@@ -5,6 +5,7 @@ import 'package:sign_language_recognition_app/models/question_model.dart';
 import 'package:sign_language_recognition_app/models/quiz_model.dart';
 import 'package:sign_language_recognition_app/services/db_helper.dart';
 import 'package:sign_language_recognition_app/services/hand_recognition_service.dart';
+import 'package:sign_language_recognition_app/services/service_manager.dart';
 import 'package:sign_language_recognition_app/painter/landmark_painter.dart';
 import 'package:sign_language_recognition_app/services/settings_service.dart';
 import 'package:sign_language_recognition_app/services/study_tracker_service.dart';
@@ -36,8 +37,8 @@ class _QuizContentPageState extends State<QuizContentPage> {
   int _correctScore = 0;
   int _wrongScore = 0;
 
-  // Hand recognition for sign detection
-  final HandRecognitionService _recognitionService = HandRecognitionService();
+  // Use preloaded singleton service instead of creating new instance (avoids 2150ms init lag)
+  late final HandRecognitionService _recognitionService;
   List<String> prediction = [];
   List<Hand> _landmarks = [];
   bool isStable = false;
@@ -57,6 +58,10 @@ class _QuizContentPageState extends State<QuizContentPage> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    // Get preloaded singleton service (no init lag!)
+    _recognitionService = ServiceManager.getHandRecognitionService();
+    
+    print('📝 [QUIZ] initState called - using preloaded singleton service');
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -108,16 +113,26 @@ class _QuizContentPageState extends State<QuizContentPage> {
 
   Future<void> _initRecognitionService() async {
     try {
-      await Future.wait([
-        initializeModelResources(),
-        _recognitionService.initialize(),
-      ]);
+      print('📝 [QUIZ] _initRecognitionService() called');
+      final initStart = DateTime.now();
+      
+      // Model already initialized, hand recognition service already initialized via singleton
+      print('📝 [QUIZ] Hand recognition service: Using preloaded singleton (skipped re-init)');
 
       if (mounted) {
         // Track quiz start time
         _quizStartTime = DateTime.now();
+        
+        print('📝 [QUIZ] Starting camera...');
+        final cameraStart = DateTime.now();
         await _recognitionService.startCamera();
+        final cameraDuration = DateTime.now().difference(cameraStart);
+        print('📝 [QUIZ] Camera started in ${cameraDuration.inMilliseconds}ms');
+        
         _subscribeToRecognitionStream();
+        
+        final totalDuration = DateTime.now().difference(initStart);
+        print('📝 [QUIZ] ✅ TOTAL INITIALIZATION TIME: ${totalDuration.inMilliseconds}ms');
       }
     } catch (e) {
       print('❌ Error initializing recognition service: $e');
@@ -202,11 +217,8 @@ class _QuizContentPageState extends State<QuizContentPage> {
         _confirmedDetectedSign = null;
         _signDetectionStart = null;
         _canProceedToNext = false;  // Reset for next question
-      } else {
-        // Quiz completed
-        _isDisposed = true;  // Mark as disposed to prevent further controller use
-        _recognitionService.dispose();  // Stop camera immediately
       }
+      // Quiz completed - let dispose() handle cleanup (don't call dispose here)
     });
     
     // Handle quiz completion after setState
@@ -275,7 +287,8 @@ class _QuizContentPageState extends State<QuizContentPage> {
     try {
       if (!_isDisposed) {
         _isDisposed = true;
-        _recognitionService.dispose();
+        // Only stop camera, don't dispose singleton service (may be reused)
+        _recognitionService.stopCameraOnly();
       }
       if (_scrollController.hasClients) {
         _scrollController.dispose();
@@ -341,6 +354,7 @@ class _QuizContentPageState extends State<QuizContentPage> {
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           childAspectRatio: 2.5,
@@ -681,84 +695,88 @@ class _QuizContentPageState extends State<QuizContentPage> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        controller: _scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Center(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: <Widget> [
-              SizedBox(height: 12,),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: LinearProgressIndicator(
-                  value: (currentQuestionIndex + 1) / questions.length,
-                  backgroundColor: isDark ? colorScheme.surfaceContainerHighest : Colors.indigo[100],
-                  color: Colors.indigoAccent,
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              SizedBox(height: 20),
-              // question
-              _buildQuestionCard(question.text, question.imagePath),
-
-              SizedBox(height: 20),
-              // answer selection
-              _buildAnswerOptions(question),
-
-              SizedBox(height: 20),
-              // camera section - sign recognition
-              _buildSignRecognition(),
-
-              SizedBox(height: 20),
-              // submit answer button
-              ElevatedButton(
-                onPressed: _canProceedToNext
-                    ? () {
-                        // TODO: Score and save result
-
-                        _nextQuestion();
-                      }
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: Text(
-                  currentQuestionIndex == questions.length - 1
-                      ? 'Finish Quiz'
-                      : 'Next Question',
-                ),
-              ),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.task_alt, color: Colors.green,),
-                      Text(
-                        " Correct: $_correctScore"
-                      )
-                    ],
+      body: Scrollbar(
+        thumbVisibility: true,
+        thickness: 8,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Center(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget> [
+                SizedBox(height: 12,),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: LinearProgressIndicator(
+                    value: (currentQuestionIndex + 1) / questions.length,
+                    backgroundColor: isDark ? colorScheme.surfaceContainerHighest : Colors.indigo[100],
+                    color: Colors.indigoAccent,
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  SizedBox(width: 30,),
-                  Row(
-                    children: [
-                      Icon(Icons.highlight_off, color: Colors.red,),
-                      Text(
-                        " Wrong: $_wrongScore"
-                      )
-                    ],
+                ),
+                SizedBox(height: 20),
+                // question
+                _buildQuestionCard(question.text, question.imagePath),
+        
+                SizedBox(height: 20),
+                // answer selection
+                _buildAnswerOptions(question),
+        
+                SizedBox(height: 20),
+                // camera section - sign recognition
+                _buildSignRecognition(),
+        
+                SizedBox(height: 20),
+                // submit answer button
+                ElevatedButton(
+                  onPressed: _canProceedToNext
+                      ? () {
+                          // TODO: Score and save result
+        
+                          _nextQuestion();
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 12),
                   ),
-                ],
-              ),
-              SizedBox(height: 20),
-            ]
-          )
+                  child: Text(
+                    currentQuestionIndex == questions.length - 1
+                        ? 'Finish Quiz'
+                        : 'Next Question',
+                  ),
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.task_alt, color: Colors.green,),
+                        Text(
+                          " Correct: $_correctScore"
+                        )
+                      ],
+                    ),
+                    SizedBox(width: 30,),
+                    Row(
+                      children: [
+                        Icon(Icons.highlight_off, color: Colors.red,),
+                        Text(
+                          " Wrong: $_wrongScore"
+                        )
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+              ]
+            )
+          ),
         ),
       ),
     );

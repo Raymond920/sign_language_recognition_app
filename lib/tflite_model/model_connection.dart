@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:tflite_flutter/tflite_flutter.dart' as tfl;
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:hand_landmarker/hand_landmarker.dart';
 
 /// Extension to reshape Float32List into nested list structure for TFLite input
 extension Float32ListReshape on Float32List {
@@ -59,62 +58,73 @@ Future<void> initializeModelResources() {
 }
 
 Future<void> _initializeModelResourcesInternal() async {
+  print('🤖 [MODEL] _initializeModelResourcesInternal() called');
+  final startTime = DateTime.now();
+  
+  print('🤖 [MODEL] Loading model...');
+  final modelStart = DateTime.now();
   await loadModel();
+  final modelDuration = DateTime.now().difference(modelStart);
+  print('🤖 [MODEL] Model loaded in ${modelDuration.inMilliseconds}ms');
+  
+  print('🤖 [MODEL] Loading labels...');
+  final labelsStart = DateTime.now();
   await loadLabels();
+  final labelsDuration = DateTime.now().difference(labelsStart);
+  print('🤖 [MODEL] Labels loaded in ${labelsDuration.inMilliseconds}ms');
+  
+  final totalDuration = DateTime.now().difference(startTime);
+  print('🤖 [MODEL] ✅ Model resources initialized in ${totalDuration.inMilliseconds}ms');
 }
 
 Future<void> loadModel() async {
   if (_isModelLoaded) return;
   try {
+    print('🤖 [MODEL] Loading TFLite model from assets...');
+    final loadStart = DateTime.now();
     _interpreter = await tfl.Interpreter.fromAsset('assets/model/msl_model_CNN.tflite');
+    final loadDuration = DateTime.now().difference(loadStart);
     _isModelLoaded = true;
-    print("Model loaded successfully");
+    print('🤖 [MODEL] ✅ TFLite model loaded successfully in ${loadDuration.inMilliseconds}ms');
   } catch (e) {
-    print("Failed to load model: $e");
+    print('❌ [MODEL] Failed to load model: $e');
     rethrow;
   }
 }
 
 Future<void> loadLabels() async {
   if (_areLabelsLoaded) return;
-  final String content = await rootBundle.loadString('assets/model/labels.txt');
-  
-  // Split by newline and remove any empty lines/extra spaces
-  _labels = content
-      .split('\n')
-      .map((label) => label.trim())
-      .where((label) => label.isNotEmpty)
-      .toList();
-  _areLabelsLoaded = true;
-      
-  print("Loaded ${_labels.length} labels: $_labels");
-  
-  // Verify we have the correct number of labels
-  if (_labels.length != 43) {
-    print("⚠️ WARNING: Expected 43 labels but got ${_labels.length}! Check your labels.txt file.");
+  try {
+    print('🤖 [MODEL] Loading labels from assets...');
+    final loadStart = DateTime.now();
+    final String content = await rootBundle.loadString('assets/model/labels.txt');
+    final loadDuration = DateTime.now().difference(loadStart);
+    print('🤖 [MODEL] Labels file loaded in ${loadDuration.inMilliseconds}ms');
+    
+    print('🤖 [MODEL] Parsing labels...');
+    final parseStart = DateTime.now();
+    // Split by newline and remove any empty lines/extra spaces
+    _labels = content
+        .split('\n')
+        .map((label) => label.trim())
+        .where((label) => label.isNotEmpty)
+        .toList();
+    final parseDuration = DateTime.now().difference(parseStart);
+    _areLabelsLoaded = true;
+        
+    print('🤖 [MODEL] ✅ Loaded ${_labels.length} labels in ${parseDuration.inMilliseconds}ms');
+    print('🤖 [MODEL] Labels: $_labels');
+    
+    // Verify we have the correct number of labels
+    if (_labels.length != 43) {
+      print('⚠️ [MODEL] WARNING: Expected 43 labels but got ${_labels.length}! Check your labels.txt file.');
+    }
+  } catch (e) {
+    print('❌ [MODEL] Error loading labels: $e');
+    rethrow;
   }
 }
 
-List<double> normalizeLandmarks(List<Landmark> landmarks) {
-  // Wrist landmark (index 0)
-  double wristX = landmarks[0].x;
-  double wristY = landmarks[0].y;
-  double wristZ = landmarks[0].z;
-
-  List<double> normalized = [];
-
-  for (var lm in landmarks) {
-    double x = lm.x - wristX;
-    double y = lm.y - wristY;
-    double z = lm.z - wristZ;
-
-    normalized.add(x);
-    normalized.add(y);
-    normalized.add(z);
-  }
-
-  return normalized; // 63 values
-}
 
 List<String> predict(input) {
   if (!_isModelLoaded || !_areLabelsLoaded) {

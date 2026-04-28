@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:hand_landmarker/hand_landmarker.dart';
 
 import 'package:sign_language_recognition_app/services/hand_recognition_service.dart';
+import 'package:sign_language_recognition_app/services/service_manager.dart';
 import 'package:sign_language_recognition_app/painter/landmark_painter.dart';
 import 'package:sign_language_recognition_app/services/settings_service.dart';
 import 'package:sign_language_recognition_app/services/tts_service.dart';
@@ -19,8 +20,8 @@ class RecognizePage extends StatefulWidget {
 }
 
 class _RecognizePageState extends State<RecognizePage> {
-  // Hand recognition service (handles camera, detection, stability)
-  final HandRecognitionService _recognitionService = HandRecognitionService();
+  // Use preloaded singleton service instead of creating new instance (avoids 2150ms init lag)
+  late final HandRecognitionService _recognitionService;
 
   // Current prediction & landmarks from service stream
   List<String> prediction = [];
@@ -50,6 +51,10 @@ class _RecognizePageState extends State<RecognizePage> {
   @override
   void initState() {
     super.initState();
+    // Get preloaded singleton service (no init lag!)
+    _recognitionService = ServiceManager.getHandRecognitionService();
+    
+    print('🎥 [RECOGNIZE] initState called - using preloaded singleton service');
     // Delay heavy startup work so route transition can finish smoothly first.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -59,14 +64,31 @@ class _RecognizePageState extends State<RecognizePage> {
 
   Future<void> _initialize() async {
     try {
-      await Future.wait([
-        initializeModelResources(),
-        _recognitionService.initialize(),
-      ]);
+      print('🎥 [RECOGNIZE] _initialize() started');
+      final initStart = DateTime.now();
+      
+      // Initialize model (if not already cached)
+      print('🎥 [RECOGNIZE] Starting model initialization...');
+      final modelStart = DateTime.now();
+      await initializeModelResources();
+      final modelDuration = DateTime.now().difference(modelStart);
+      print('🎥 [RECOGNIZE] Model initialization completed in ${modelDuration.inMilliseconds}ms');
+      
+      // Hand recognition service ALREADY initialized via singleton at app startup
+      // This eliminates the 2150ms TensorFlow Lite hand landmarker initialization!
+      print('🎥 [RECOGNIZE] Hand recognition service: Using preloaded singleton (skipped re-init)');
 
       if (mounted) {
+        print('🎥 [RECOGNIZE] Starting camera...');
+        final cameraStart = DateTime.now();
         await _recognitionService.startCamera();
+        final cameraDuration = DateTime.now().difference(cameraStart);
+        print('🎥 [RECOGNIZE] Camera started in ${cameraDuration.inMilliseconds}ms');
+        
         _subscribeToRecognitionStream();
+        
+        final totalDuration = DateTime.now().difference(initStart);
+        print('🎥 [RECOGNIZE] ✅ TOTAL INITIALIZATION TIME (page nav): ${totalDuration.inMilliseconds}ms');
       }
     } catch (e) {
       print('❌ Error initializing recognize page: $e');
@@ -151,7 +173,8 @@ class _RecognizePageState extends State<RecognizePage> {
 
   @override
   void dispose() {
-    _recognitionService.dispose();
+    // Only stop camera, don't dispose singleton service (may be reused)
+    _recognitionService.stopCameraOnly();
     _spellingController.dispose();
     super.dispose();
   }
@@ -218,7 +241,8 @@ class _RecognizePageState extends State<RecognizePage> {
                       alignment: Alignment.center,
                       children: [
                         // LIVE CAMERA PREVIEW
-                        if (_recognitionService.isCameraInitialized && _recognitionService.cameraController != null && _recognitionService.cameraController!.value.isInitialized)
+                        if (_recognitionService.isCameraInitialized && _recognitionService.cameraController != null 
+                        && _recognitionService.cameraController!.value.isInitialized)
                           SizedBox.expand(
                             child: FittedBox(
                               fit: BoxFit.cover,
@@ -240,7 +264,8 @@ class _RecognizePageState extends State<RecognizePage> {
                           Center(child: CircularProgressIndicator()),
 
                         // Hand landmark overlay
-                        if (_recognitionService.isCameraInitialized && _recognitionService.cameraController != null && _recognitionService.cameraController!.value.isInitialized && _showLandmark)
+                        if (_recognitionService.isCameraInitialized && _recognitionService.cameraController != null 
+                        && _recognitionService.cameraController!.value.isInitialized && _showLandmark)
                           Positioned.fill(
                             child: CustomPaint(
                               painter: LandmarkPainter(
@@ -429,7 +454,7 @@ class _RecognizePageState extends State<RecognizePage> {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  "Correct",
+                                  "Confidence",
                                   style: TextStyle(
                                     color: isDark ? const Color(0xFF86EFAC) : Colors.green,
                                   ),

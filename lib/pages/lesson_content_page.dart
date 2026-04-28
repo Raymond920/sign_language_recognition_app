@@ -5,6 +5,7 @@ import 'package:sign_language_recognition_app/models/lesson_model.dart';
 import 'package:sign_language_recognition_app/models/sign_model.dart';
 import 'package:sign_language_recognition_app/services/achivement_service.dart';
 import 'package:sign_language_recognition_app/services/hand_recognition_service.dart';
+import 'package:sign_language_recognition_app/services/service_manager.dart';
 import 'package:sign_language_recognition_app/painter/landmark_painter.dart';
 import 'package:sign_language_recognition_app/services/settings_service.dart';
 import 'package:sign_language_recognition_app/services/db_helper.dart';
@@ -46,8 +47,8 @@ class _LessonContentPageState extends State<LessonContentPage> {
   final DBHelper dbHelper = DBHelper();
   bool _isLoading = true;
 
-  // Hand recognition service (handles camera, detection, stability)
-  final HandRecognitionService _recognitionService = HandRecognitionService();
+  // Use preloaded singleton service instead of creating new instance (avoids 2150ms init lag)
+  late final HandRecognitionService _recognitionService;
 
   // Current prediction & landmarks from service stream
   List<String> prediction = [];
@@ -65,10 +66,18 @@ class _LessonContentPageState extends State<LessonContentPage> {
   
   // Study session tracking
   late DateTime _lessonStartTime;
+  
+  // Scroll controller for auto-scroll
+  late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    // Get preloaded singleton service (no init lag!)
+    _recognitionService = ServiceManager.getHandRecognitionService();
+    
+    print('📖 [LESSON] initState called - using preloaded singleton service');
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -125,18 +134,26 @@ class _LessonContentPageState extends State<LessonContentPage> {
 
   Future<void> _initRecognitionService() async {
     try {
-      await Future.wait([
-        initializeModelResources(),
-        _recognitionService.initialize(),
-      ]);
-
+      print('📖 [LESSON] _initRecognitionService() called');
+      final initStart = DateTime.now();
+      
+      // Model already initialized, hand recognition service already initialized via singleton
+      print('📖 [LESSON] Hand recognition service: Using preloaded singleton (skipped re-init)');
+      
       if (mounted) {
+        print('📖 [LESSON] Starting camera...');
+        final cameraStart = DateTime.now();
         await _recognitionService.startCamera();
+        final cameraDuration = DateTime.now().difference(cameraStart);
+        print('📖 [LESSON] Camera started in ${cameraDuration.inMilliseconds}ms');
         
         // Subscribe to prediction stream
         if (mounted) {
           _subscribeToRecognitionStream();
         }
+        
+        final totalDuration = DateTime.now().difference(initStart);
+        print('📖 [LESSON] ✅ TOTAL INITIALIZATION TIME: ${totalDuration.inMilliseconds}ms');
       }
     } catch (e) {
       print('❌ Error initializing recognition service: $e');
@@ -185,7 +202,9 @@ class _LessonContentPageState extends State<LessonContentPage> {
 
   @override
   void dispose() {
-    _recognitionService.dispose();
+    // Only stop camera, don't dispose singleton service (may be reused)
+    _recognitionService.stopCameraOnly();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -211,11 +230,26 @@ class _LessonContentPageState extends State<LessonContentPage> {
   }
 
   void onSignDetectedCorrectly() async {
+    // Show feedback indicator regardless of completion status
+    setState(() {
+      hasDetectedCorrectSign = true;
+    });
+    
+    // Auto-scroll to bottom to show the next button
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+
     if (!signs[currentIndex].isCompleted) {
-      // Mark as completed locally and show feedback
+      // Mark as completed locally
       setState(() {
         signs[currentIndex].isCompleted = true;
-        hasDetectedCorrectSign = true;
       });
       
       // Save progress to database
@@ -300,40 +334,46 @@ class _LessonContentPageState extends State<LessonContentPage> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: <Widget> [
-              SizedBox(height: 12,),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: LinearProgressIndicator(
-                  value: (currentIndex + 1) / totalSteps,
-                  backgroundColor: isDark ? colorScheme.surfaceContainerHighest : Colors.indigo[100],
-                  color: Colors.indigoAccent,
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(12),
+      body: Scrollbar(
+        controller: _scrollController,
+        thumbVisibility: true,
+        thickness: 8,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget> [
+                SizedBox(height: 12,),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: LinearProgressIndicator(
+                    value: (currentIndex + 1) / totalSteps,
+                    backgroundColor: isDark ? colorScheme.surfaceContainerHighest : Colors.indigo[100],
+                    color: Colors.indigoAccent,
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-              SizedBox(height: 20),
-              Column(
-                children: [
-                  // Learning Card
-                  _buildInstructionCard(currentSign),
-
-                  const SizedBox(height: 20),
-
-                  // Practice Card
-                  _buildPracticeCard(currentSign),
-
-                ],
-              ),
-              
-              // Bottom Navigation Buttons
-              _buildBottomNav(totalSteps),
-            ],
+                SizedBox(height: 20),
+                Column(
+                  children: [
+                    // Learning Card
+                    _buildInstructionCard(currentSign),
+        
+                    const SizedBox(height: 20),
+        
+                    // Practice Card
+                    _buildPracticeCard(currentSign),
+        
+                  ],
+                ),
+                
+                // Bottom Navigation Buttons
+                _buildBottomNav(totalSteps),
+              ],
+            ),
           ),
         ),
       ),

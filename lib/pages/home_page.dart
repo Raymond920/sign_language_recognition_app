@@ -131,6 +131,8 @@ class _HomePageState extends State<HomePage> {
                   leading: Icon(Icons.camera_alt_outlined),
                   title: Text('Recognize Signs'),
                   onTap: () {
+                    print('🏠→📷 [HOME] Navigating to recognize-signs...');
+                    final navigationStart = DateTime.now();
                     Navigator.pop(context);
                     context.push("/recognize-signs");
                   },
