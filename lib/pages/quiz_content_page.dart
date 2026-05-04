@@ -50,6 +50,7 @@ class _QuizContentPageState extends State<QuizContentPage> {
 
   late ScrollController _scrollController;
   bool _isDisposed = false;  // Track if resources have been disposed
+  bool _isPageReady = false;  // ✅ 0.5s stabilization delay for camera controller
   
   // Study session tracking
   late DateTime _quizStartTime;
@@ -57,11 +58,23 @@ class _QuizContentPageState extends State<QuizContentPage> {
   @override
   void initState() {
     super.initState();
+    print('📝 [QUIZ] ================= QUIZ PAGE INIT START =================');
+    print('📝 [QUIZ] initState called for Quiz ID: ${widget.quizId}');
+    
     _scrollController = ScrollController();
     // Get preloaded singleton service (no init lag!)
     _recognitionService = ServiceManager.getHandRecognitionService();
     
-    print('📝 [QUIZ] initState called - using preloaded singleton service');
+    print('📝 [QUIZ] ✅ Got singleton service: $_recognitionService');
+    
+    // ✅ Wait 0.5s for camera controller to stabilize (prevents race condition)
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      setState(() {
+        _isPageReady = true;
+        print('📝 [QUIZ] ✅ Page ready after 0.5s stabilization delay');
+      });
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -284,17 +297,26 @@ class _QuizContentPageState extends State<QuizContentPage> {
 
   @override
   void dispose() {
+    print('📝 [QUIZ] ================= QUIZ PAGE DISPOSE START =================');
+    print('📝 [QUIZ] dispose() called, _isDisposed=$_isDisposed');
     try {
       if (!_isDisposed) {
         _isDisposed = true;
+        print('📝 [QUIZ] ✅ Calling stopCameraOnly() on service...');
         // Only stop camera, don't dispose singleton service (may be reused)
         _recognitionService.stopCameraOnly();
+        print('📝 [QUIZ] ✅ stopCameraOnly() completed');
+      } else {
+        print('📝 [QUIZ] ⚠️ Already disposed, skipping stopCameraOnly()');
       }
+      
       if (_scrollController.hasClients) {
         _scrollController.dispose();
+        print('📝 [QUIZ] ✅ ScrollController disposed');
       }
+      print('📝 [QUIZ] ================= QUIZ PAGE DISPOSE END =================');
     } catch (e) {
-      print('Error during dispose: $e');
+      print('❌ [QUIZ] Error during dispose: $e');
     }
     super.dispose();
   }
@@ -456,7 +478,9 @@ class _QuizContentPageState extends State<QuizContentPage> {
                 // Camera preview with hand landmarks
                 if (_recognitionService.isCameraInitialized &&
                     _recognitionService.cameraController != null &&
-                    _recognitionService.cameraController!.value.isInitialized)
+                    _recognitionService.cameraController!.value.isInitialized &&
+                    _recognitionService.isCameraInitialized &&
+                    _isPageReady)  // ✅ Wait for 0.5s stabilization
                   SizedBox.expand(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),

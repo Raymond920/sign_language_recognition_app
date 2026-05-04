@@ -10,6 +10,53 @@ import 'package:sign_language_recognition_app/services/settings_service.dart';
 import 'package:sign_language_recognition_app/services/tts_service.dart';
 import 'package:sign_language_recognition_app/tflite_model/model_connection.dart';
 
+/// NFR001 Latency Monitor: Measures gesture capture → text rendering latency
+/// Includes ML Kit landmark extraction + TFLite inference time
+class LatencyMonitor {
+  final Stopwatch _stopwatch = Stopwatch();
+  final int averageWindow;
+  int _frameCount = 0;
+  double _sumLatencyMs = 0;
+  bool _isProcessing = false;
+
+  LatencyMonitor({this.averageWindow = 30});
+
+  /// Measure a single frame's latency including landmark extraction + inference
+  Future<void> measureFrame(Future<void> Function() work) async {
+    if (_isProcessing) return; // skip overlapping frames
+    _isProcessing = true;
+
+    _stopwatch.reset();
+    _stopwatch.start();
+
+    try {
+      await work(); // landmark extraction + TFLite inference happen here
+    } catch (e) {
+      print('❌ Frame processing error: $e');
+    } finally {
+      _stopwatch.stop();
+      final ms = _stopwatch.elapsedMicroseconds / 1000.0;  // Convert to ms with decimal precision
+      _frameCount++;
+      _sumLatencyMs += ms;
+
+      // Per-frame latency log
+      print('📊 [NFR001] Frame ${_frameCount}: ${ms.toStringAsFixed(2)}ms');
+
+      // Average latency every N frames
+      if (_frameCount % averageWindow == 0) {
+        final avg = _sumLatencyMs / averageWindow;
+        print('📊 [NFR001] Average latency (last $averageWindow frames): ${avg.toStringAsFixed(2)}ms');
+        _sumLatencyMs = 0;
+      }
+
+      _isProcessing = false;
+    }
+  }
+
+  int get frameCount => _frameCount;
+  double get totalSumMs => _sumLatencyMs;
+}
+
 class RecognizePage extends StatefulWidget {
   const RecognizePage({
     super.key,
@@ -22,6 +69,9 @@ class RecognizePage extends StatefulWidget {
 class _RecognizePageState extends State<RecognizePage> {
   // Use preloaded singleton service instead of creating new instance (avoids 2150ms init lag)
   late final HandRecognitionService _recognitionService;
+
+  // NFR001: Latency monitoring (gesture capture → text rendering)
+  late final LatencyMonitor _latencyMonitor;
 
   // Current prediction & landmarks from service stream
   List<String> prediction = [];
@@ -46,6 +96,8 @@ class _RecognizePageState extends State<RecognizePage> {
 
   // Spelling mode controller
   TextEditingController _spellingController = TextEditingController();
+  
+  bool _isPageReady = false;  // ✅ 0.5s stabilization delay for camera controller
 
   // FPS tracking (from stream)
   @override
@@ -54,7 +106,21 @@ class _RecognizePageState extends State<RecognizePage> {
     // Get preloaded singleton service (no init lag!)
     _recognitionService = ServiceManager.getHandRecognitionService();
     
+    // Initialize latency monitor for NFR001 validation
+    _latencyMonitor = LatencyMonitor(averageWindow: 30);
+    
     print('🎥 [RECOGNIZE] initState called - using preloaded singleton service');
+    print('📊 [NFR001] LatencyMonitor initialized - measuring gesture→text latency');
+    
+    // ✅ Wait 0.5s for camera controller to stabilize (prevents race condition)
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      setState(() {
+        _isPageReady = true;
+        print('🎥 [RECOGNIZE] ✅ Page ready after 0.5s stabilization delay');
+      });
+    });
+    
     // Delay heavy startup work so route transition can finish smoothly first.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -102,6 +168,11 @@ class _RecognizePageState extends State<RecognizePage> {
     _recognitionService.predictions.listen(
       (result) {
         if (!mounted) return;
+
+        // NFR001: Log actual ML Kit + TFLite latency from service
+        if (result.latencyMs > 0) {
+          print('📊 [NFR001] Service latency: ${result.latencyMs.toStringAsFixed(2)}ms');
+        }
 
         setState(() {
           prediction = result.prediction;
@@ -242,7 +313,7 @@ class _RecognizePageState extends State<RecognizePage> {
                       children: [
                         // LIVE CAMERA PREVIEW
                         if (_recognitionService.isCameraInitialized && _recognitionService.cameraController != null 
-                        && _recognitionService.cameraController!.value.isInitialized)
+                        && _recognitionService.cameraController!.value.isInitialized && _isPageReady)  // ✅ Wait for 0.5s stabilization
                           SizedBox.expand(
                             child: FittedBox(
                               fit: BoxFit.cover,

@@ -7,6 +7,7 @@ class PredictionResult {
   final bool isStable; // Whether hand is currently stable
   final String stabilityStatus; // Human-readable stability info
   final double fps; // Frames per second
+  final double latencyMs; // NFR001: Time from image capture to prediction (ML Kit + TFLite)
 
   PredictionResult({
     required this.prediction,
@@ -14,5 +15,6 @@ class PredictionResult {
     required this.isStable,
     required this.stabilityStatus,
     required this.fps,
+    required this.latencyMs,
   });
 }

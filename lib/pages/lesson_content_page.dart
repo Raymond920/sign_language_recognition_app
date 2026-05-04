@@ -69,6 +69,7 @@ class _LessonContentPageState extends State<LessonContentPage> {
   
   // Scroll controller for auto-scroll
   late ScrollController _scrollController;
+  bool _isPageReady = false;  // ✅ 0.5s stabilization delay for camera controller
 
   @override
   void initState() {
@@ -78,6 +79,15 @@ class _LessonContentPageState extends State<LessonContentPage> {
     _recognitionService = ServiceManager.getHandRecognitionService();
     
     print('📖 [LESSON] initState called - using preloaded singleton service');
+    
+    // ✅ Wait 0.5s for camera controller to stabilize (prevents race condition)
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      setState(() {
+        _isPageReady = true;
+        print('📖 [LESSON] ✅ Page ready after 0.5s stabilization delay');
+      });
+    });
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -471,7 +481,7 @@ class _LessonContentPageState extends State<LessonContentPage> {
               alignment: Alignment.center,
               children: [
                 // Camera Preview
-                if (_recognitionService.isCameraInitialized && _recognitionService.cameraController != null && _recognitionService.cameraController!.value.isInitialized)
+                if (_recognitionService.isCameraInitialized && _recognitionService.cameraController != null && _recognitionService.cameraController!.value.isInitialized && _isPageReady)  // ✅ Wait for 0.5s stabilization
                   SizedBox.expand(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
