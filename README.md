@@ -17,12 +17,23 @@ A polished Flutter learning app that helps users recognize, practice, and study 
 
 Add your screenshots here when you are ready:
 
+### Home Screen
 ![Home Screen](assets/screenshots/home.jpeg)
-![Recognition Screen](assets/screenshots/recognition.gif)
-![Lessons Screen](assets/screenshots/lessons.gif)
-![Quiz Screen](assets/screenshots/quiz.gif)
 
-You can also replace these with GIFs or a short screen recording preview.
+---
+
+### Recognition Screen
+<img width="360" height="805" alt="recognition" src="https://github.com/user-attachments/assets/594a53b4-aaee-4398-847b-357cdc490a76" />
+
+---
+
+### Lessons Screen
+<img width="360" height="805" alt="lessons" src="https://github.com/user-attachments/assets/f52261a4-8842-4bb4-85b8-faa3271e043d" />
+
+---
+
+### Quiz Screen
+<img width="360" height="805" alt="quiz" src="https://github.com/user-attachments/assets/7df07ba1-3244-4371-af5a-43db57e55ac3" />
 
 ---
 
