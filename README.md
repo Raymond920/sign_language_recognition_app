@@ -18,7 +18,7 @@ A polished Flutter learning app that helps users recognize, practice, and study 
 Add your screenshots here when you are ready:
 
 ![Home Screen](assets/screenshots/home.jpeg)
-![Recognition Screen](assets/screenshots/recognition.gif)
+![Recognition Screen](https://github.com/Raymond920/sign_language_recognition_app/blob/main/assets/screenshots/recognition.gif)
 ![Lessons Screen](assets/screenshots/lessons.gif)
 ![Quiz Screen](assets/screenshots/quiz.gif)
 
