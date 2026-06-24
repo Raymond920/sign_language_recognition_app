@@ -14,11 +14,8 @@ A polished Flutter learning app that helps users recognize, practice, and study 
 ---
 
 ## 📱 Screenshots / Demo
-
-Add your screenshots here when you are ready:
-
 ### Home Screen
-![Home Screen](assets/screenshots/home.jpeg)
+<img width="360" height="805" alt="home" src="https://github.com/user-attachments/assets/5301be79-d626-471f-9e5c-fd7c473a1eb0" />
 
 ---
 
