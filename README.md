@@ -17,10 +17,10 @@ A polished Flutter learning app that helps users recognize, practice, and study 
 
 Add your screenshots here when you are ready:
 
-![Home Screen](assets/screenshots/home.png)
-![Recognition Screen](assets/screenshots/recognition.png)
-![Lessons Screen](assets/screenshots/lessons.png)
-![Quiz Screen](assets/screenshots/quiz.png)
+![Home Screen](assets/screenshots/home.jpeg)
+![Recognition Screen](assets/screenshots/recognition.gif)
+![Lessons Screen](assets/screenshots/lessons.gif)
+![Quiz Screen](assets/screenshots/quiz.gif)
 
 You can also replace these with GIFs or a short screen recording preview.
 
@@ -69,14 +69,18 @@ You can also replace these with GIFs or a short screen recording preview.
 
 ### Installation
 
+1. Open the project releases page and download the `v1.0.0` APK from the release assets.
+2. Install the APK on an Android device running Android 10 or above.
+3. Open the app after installation and allow any requested permissions.
+
+If you want to run the source code instead of using the release APK, make sure your Flutter setup supports the target platform before running the app.
+
 ```bash
 git clone <your-repository-url>
 cd sign_language_recognition_app
 flutter pub get
 flutter run
 ```
-
-If you are targeting a specific platform, make sure that platform is enabled in your Flutter setup before running the app.
 
 ---
 
